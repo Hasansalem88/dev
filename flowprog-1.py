@@ -79,6 +79,24 @@ def save_data(df):
     except Exception as e:
         st.error(f"❌ Failed to save data to Google Sheet: {e}")
 
+# Load data
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"❌ Failed to load data from Google Sheet: {e}")
+    st.stop()
+
+# Sidebar filters
+with st.sidebar:
+    st.header("🔍 Filters")
+    selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
+    selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
+    vin_search = st.text_input("Search VIN (partial match allowed)").strip().upper()
+    if st.button("Reset Filters"):
+        selected_status = "All"
+        selected_line = "All"
+        vin_search = ""
+
 # --- Daily Summary ---
 with st.expander("📅 Daily Production Summary", expanded=True):
     col1, col2, col3 = st.columns(3)
@@ -125,24 +143,6 @@ with st.expander("🏭 Line Progress Tracker", expanded=True):
     fig_progress.update_traces(textposition="outside")
     fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
     st.plotly_chart(fig_progress, use_container_width=True)
-
-# Load data
-try:
-    df = load_data()
-except Exception as e:
-    st.error(f"❌ Failed to load data from Google Sheet: {e}")
-    st.stop()
-
-# Sidebar filters
-with st.sidebar:
-    st.header("🔍 Filters")
-    selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
-    selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
-    vin_search = st.text_input("Search VIN (partial match allowed)").strip().upper()
-    if st.button("Reset Filters"):
-        selected_status = "All"
-        selected_line = "All"
-        vin_search = ""
 
 # Apply filters
 filtered_df = df.copy()
