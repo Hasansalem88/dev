@@ -135,18 +135,19 @@ if report_option == "Dashboard Summary":
         col3.metric("🔄 Still In Progress", len(in_progress))
 
 # --- Daily completions trend ---
-with st.expander("📈 Daily Completions Trend", expanded=True):
-    daily_counts = df[df["Last Updated"].notna()].copy()
-    daily_counts["Last Updated"] = pd.to_datetime(daily_counts["Last Updated"], errors="coerce")
-    daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
-    daily_counts = daily_counts[(
-        daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
-    )]
-    trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
-    if not trend.empty:
-        st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
-    else:
-        st.info("ℹ️ No completed vehicles yet to display in trend.")
+if report_option == "Production Trend":
+    with st.container():
+        st.subheader("📈 Daily Completions Trend")
+        daily_counts = df[df["Last Updated"].notna()].copy()
+        daily_counts["Last Updated"] = pd.to_datetime(daily_counts["Last Updated"], errors="coerce")
+        daily_counts = daily_counts[daily_counts["Last Updated"].notna()]
+        daily_counts = daily_counts[daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+        daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
+        trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
+        if not trend.empty:
+            st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
+        else:
+            st.info("ℹ️ No completed vehicles yet to display in trend.")
 
 # Section 3: Line Progress
 elif report_option == "Line Progress":
