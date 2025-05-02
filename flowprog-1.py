@@ -62,7 +62,7 @@ def load_data():
 def save_data(df):
     df_copy = df.copy()
 
-    # 1. Ensure all values are strings or empty
+    # 1. تأكد من تحويل كل القيم إلى string أو فارغة
     for col in df_copy.columns:
         df_copy[col] = df_copy[col].apply(
             lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
@@ -70,10 +70,10 @@ def save_data(df):
             else str(x)
         )
 
-    # 2. Clean up any NaN values
+    # 2. تنظيف أي NaN
     df_copy = df_copy.fillna("")
 
-    # 3. Clear and update sheet safely
+    # 3. مسح الشيت وتحديثه بشكل آمن
     try:
         sheet.clear()
         sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
@@ -148,31 +148,31 @@ if selected_vin:
     st.dataframe(status_df, height=600, use_container_width=True)
     st.download_button("⬇️ Download Filtered Data as CSV", status_df.to_csv(index=False), "vehicle_status.csv")
 
-# --- Daily Summary ---
+# --- Daily Summary --- (Organized into columns)
 st.subheader("📅 Daily Production Summary")
-
+col1, col2, col3 = st.columns(3)
 df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
 df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
 today = pd.Timestamp.now().normalize()
 
 vehicles_today = df[df["Start Time"].dt.normalize() == today]
-completed_today = df[
-    (df["Last Updated"].dt.normalize() == today) &
+completed_today = df[(
+    df["Last Updated"].dt.normalize() == today) &
     (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))
 ]
 in_progress = df[df["Current Line"] != "Delivery"]
 
-col1, col2, col3 = st.columns(3)
 col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
 col2.metric("✅ Completed Today", len(completed_today))
 col3.metric("🔄 Still In Progress", len(in_progress))
 
 # --- Daily completions trend ---
+st.subheader("📈 Daily Completions Trend")
 daily_counts = df[df["Last Updated"].notna()].copy()
 daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
-daily_counts = daily_counts[
+daily_counts = daily_counts[(
     daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
-]
+)]
 trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
 if not trend.empty:
     st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
@@ -181,7 +181,6 @@ else:
 
 # --- Line Progress Tracker ---
 st.subheader("🏭 Line Progress Tracker")
-
 line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
 line_counts.columns = ["Production Line", "Vehicle Count"]
 
