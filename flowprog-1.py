@@ -60,14 +60,25 @@ def load_data():
 
 # Save data to Google Sheets
 def save_data(df):
-    # Create a copy and convert all datetime fields to string
     df_copy = df.copy()
+
+    # 1. تأكد من تحويل كل القيم إلى string أو فارغة
     for col in df_copy.columns:
         df_copy[col] = df_copy[col].apply(
-            lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) else x
+            lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
+            else "" if pd.isnull(x)
+            else str(x)
         )
-    sheet.clear()
-    sheet.update([df_copy.columns.tolist()] + df_copy.values.tolist())
+
+    # 2. تنظيف أي NaN
+    df_copy = df_copy.fillna("")
+
+    # 3. مسح الشيت وتحديثه بشكل آمن
+    try:
+        sheet.clear()
+        sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
+    except Exception as e:
+        st.error(f"❌ Failed to save data to Google Sheet: {e}")
 
 # Load data
 try:
