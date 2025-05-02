@@ -26,7 +26,7 @@ creds = service_account.Credentials.from_service_account_info(secrets, scopes=SC
 # Authenticate Google Sheets
 try:
     client = gspread.authorize(creds)
-    sheet = client.open("VehicleDashboard").sheet1
+    sheet = client.open("VehicleDashboardtest").sheet1
 except Exception as e:
     st.error(f"❌ Error opening Google Sheet: {e}")
     st.stop()
