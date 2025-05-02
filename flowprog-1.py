@@ -97,6 +97,27 @@ with st.sidebar:
         selected_line = "All"
         vin_search = ""
 
+# Apply filters
+filtered_df = df.copy()
+
+if "VIN" in filtered_df.columns:
+    if vin_search:
+        filtered_df = filtered_df[filtered_df["VIN"].str.upper().str.contains(vin_search)]
+    if selected_status != "All":
+        if selected_status == "Completed":
+            filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+        else:
+            filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
+    if selected_line != "All":
+        filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
+
+    st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
+    valid_vins = filtered_df["VIN"].tolist()
+    selected_vin = st.sidebar.selectbox("Select Vehicle (VIN)", valid_vins) if valid_vins else None
+else:
+    st.sidebar.error("❌ 'VIN' column not found in Google Sheet. Please ensure the header row is correct.")
+    selected_vin = None
+
 # --- Daily Summary ---
 with st.expander("📅 Daily Production Summary", expanded=True):
     col1, col2, col3 = st.columns(3)
@@ -143,27 +164,6 @@ with st.expander("🏭 Line Progress Tracker", expanded=True):
     fig_progress.update_traces(textposition="outside")
     fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
     st.plotly_chart(fig_progress, use_container_width=True)
-
-# Apply filters
-filtered_df = df.copy()
-
-if "VIN" in filtered_df.columns:
-    if vin_search:
-        filtered_df = filtered_df[filtered_df["VIN"].str.upper().str.contains(vin_search)]
-    if selected_status != "All":
-        if selected_status == "Completed":
-            filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-        else:
-            filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
-    if selected_line != "All":
-        filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
-
-    st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
-    valid_vins = filtered_df["VIN"].tolist()
-    selected_vin = st.sidebar.selectbox("Select Vehicle (VIN)", valid_vins) if valid_vins else None
-else:
-    st.sidebar.error("❌ 'VIN' column not found in Google Sheet. Please ensure the header row is correct.")
-    selected_vin = None
 
 # Visualize production flow
 def create_flow_chart(row):
