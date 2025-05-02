@@ -54,7 +54,7 @@ def load_data():
             columns.append(line)
             columns.append(f"{line}_time")
         empty_df = pd.DataFrame(columns=columns)
-        sheet.update([empty_df.columns.values.tolist()])
+        sheet.update([list(empty_df.columns)] + [[]])
         return empty_df
     return pd.DataFrame(records)
 
