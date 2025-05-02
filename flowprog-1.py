@@ -47,7 +47,6 @@ STATUS_COLORS = {
 def load_data():
     records = sheet.get_all_records()
     if not records:
-        # Sheet is empty, initialize columns
         columns = ["VIN", "Model", "Current Line", "Start Time", "Last Updated"]
         for line in PRODUCTION_LINES:
             columns.append(line)
@@ -60,19 +59,12 @@ def load_data():
 # Save data to Google Sheets
 def save_data(df):
     df_copy = df.copy()
-
-    # 1. تأكد من تحويل كل القيم إلى string أو فارغة
     for col in df_copy.columns:
-        df_copy[col] = df_copy[col].apply(
-            lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
-            else "" if pd.isnull(x)
+        df_copy[col] = df_copy[col].apply(lambda x: 
+            x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
+            else "" if pd.isnull(x) or x == pd.NaT
             else str(x)
         )
-
-    # 2. تنظيف أي NaN
-    df_copy = df_copy.fillna("")
-
-    # 3. مسح الشيت وتحديثه بشكل آمن
     try:
         sheet.clear()
         sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
@@ -86,7 +78,17 @@ except Exception as e:
     st.error(f"❌ Failed to load data from Google Sheet: {e}")
     st.stop()
 
-# Sidebar filters
+# Sidebar Navigation
+st.sidebar.title("📂 Report Menu")
+report_option = st.sidebar.radio("Select Report Section", [
+    "Dashboard Summary",
+    "Production Trend",
+    "Line Progress",
+    "Vehicle Details",
+    "Add/Update Vehicle"
+])
+
+# Sidebar Filters
 with st.sidebar:
     st.header("🔍 Filters")
     selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
@@ -99,7 +101,6 @@ with st.sidebar:
 
 # Apply filters
 filtered_df = df.copy()
-
 if "VIN" in filtered_df.columns:
     if vin_search:
         filtered_df = filtered_df[filtered_df["VIN"].str.upper().str.contains(vin_search)]
@@ -115,134 +116,131 @@ if "VIN" in filtered_df.columns:
     valid_vins = filtered_df["VIN"].tolist()
     selected_vin = st.sidebar.selectbox("Select Vehicle (VIN)", valid_vins) if valid_vins else None
 else:
-    st.sidebar.error("❌ 'VIN' column not found in Google Sheet. Please ensure the header row is correct.")
+    st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
     selected_vin = None
 
-# --- Daily Summary ---
-with st.expander("📅 Daily Production Summary", expanded=True):
-    col1, col2, col3 = st.columns(3)
-    df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
-    df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
-    today = pd.Timestamp.now().normalize()
+# Section 1: Dashboard Summary
+if report_option == "Dashboard Summary":
+    with st.container():
+        st.subheader("📅 Daily Production Summary")
+        col1, col2, col3 = st.columns(3)
+        df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
+        df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
+        today = pd.Timestamp.now().normalize()
+        vehicles_today = df[df["Start Time"].dt.normalize() == today]
+        completed_today = df[(df["Last Updated"].dt.normalize() == today) & (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
+        in_progress = df[df["Current Line"] != "Delivery"]
+        col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
+        col2.metric("✅ Completed Today", len(completed_today))
+        col3.metric("🔄 Still In Progress", len(in_progress))
 
-    vehicles_today = df[df["Start Time"].dt.normalize() == today]
-    completed_today = df[(
-        df["Last Updated"].dt.normalize() == today) &
-        (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))
-    ]
-    in_progress = df[df["Current Line"] != "Delivery"]
-
-    col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
-    col2.metric("✅ Completed Today", len(completed_today))
-    col3.metric("🔄 Still In Progress", len(in_progress))
-
-# --- Daily completions trend ---
-with st.expander("📈 Daily Completions Trend", expanded=True):
-    daily_counts = df[df["Last Updated"].notna()].copy()
-    daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
-    daily_counts = daily_counts[(
-        daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
-    )]
-    trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
-    if not trend.empty:
-        st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
-    else:
-        st.info("ℹ️ No completed vehicles yet to display in trend.")
-
-# --- Line Progress Tracker ---
-with st.expander("🏭 Line Progress Tracker", expanded=True):
-    line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
-    line_counts.columns = ["Production Line", "Vehicle Count"]
-
-    fig_progress = px.bar(
-        line_counts,
-        x="Production Line",
-        y="Vehicle Count",
-        title="Vehicles Currently at Each Production Line",
-        text="Vehicle Count"
-    )
-    fig_progress.update_traces(textposition="outside")
-    fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
-    st.plotly_chart(fig_progress, use_container_width=True)
-
-# Visualize production flow
-def create_flow_chart(row):
-    flow_data = [
-        {
-            "Production Line": line,
-            "Status": row.get(line, "Not Started"),
-            "Color": STATUS_COLORS.get(row.get(line), "#808080")
-        } for line in PRODUCTION_LINES
-    ]
-    fig = px.bar(
-        pd.DataFrame(flow_data),
-        x="Production Line",
-        color="Status",
-        color_discrete_map=STATUS_COLORS,
-        title=f"Production Flow for {row['VIN']}",
-        text="Status"
-    )
-    fig.update_layout(xaxis_title="", yaxis_title="", showlegend=False, height=400)
-    fig.update_traces(textposition='outside')
-    return fig
-
-if selected_vin:
-    selected_row = df[df["VIN"] == selected_vin].iloc[0]
-    st.container().write(f"**Vehicle VIN: {selected_vin}**")
-    st.container().plotly_chart(create_flow_chart(selected_row), use_container_width=True)
-    st.container().dataframe(filtered_df[["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES], height=600, use_container_width=True)
-
-# Add vehicle
-with st.expander("✏️ Add New Vehicle", expanded=True):
-    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
-    new_model = st.selectbox("Model", ["C43"])
-    new_start_time = st.date_input("Start Date", datetime.now().date())
-    if st.button("Add Vehicle"):
-        if len(new_vin) != 5:
-            st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].values:
-            st.error("❌ This VIN already exists.")
+# Section 2: Production Trend
+elif report_option == "Production Trend":
+    with st.container():
+        st.subheader("📈 Daily Completions Trend")
+        daily_counts = df[df["Last Updated"].notna()].copy()
+        daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
+        daily_counts = daily_counts[(daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
+        trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
+        if not trend.empty:
+            st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
         else:
-            vehicle = {
-                "VIN": new_vin,
-                "Model": new_model,
-                "Current Line": "Body Shop",
-                "Start Time": datetime.combine(new_start_time, datetime.min.time()),
-                "Last Updated": datetime.now(),
-            }
-            for line in PRODUCTION_LINES:
-                vehicle[line] = "In Progress" if line == "Body Shop" else ""
-                vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
-            df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-            save_data(df)
-            st.success(f"✅ {new_vin} added successfully!")
-            st.rerun()
+            st.info("ℹ️ No completed vehicles yet to display in trend.")
 
-# Update vehicle
-with st.expander("✏️ Update Vehicle Status"):
-    if not df.empty and "VIN" in df.columns:
-        update_vin = st.selectbox("VIN to Update", df["VIN"])
-        current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
-        update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
-        new_status = st.selectbox("New Status", list(STATUS_COLORS.keys()))
-        if st.button("Update Status"):
-            idx = df[df["VIN"] == update_vin].index[0]
-            current_idx = PRODUCTION_LINES.index(current_line)
-            update_idx = PRODUCTION_LINES.index(update_line)
-            if new_status == "In Progress" and update_idx < current_idx:
-                st.warning("⚠️ Cannot revert a completed line back to 'In Progress'.")
-            else:
-                df.at[idx, update_line] = new_status
-                df.at[idx, f"{update_line}_time"] = datetime.now()
-                df.at[idx, "Last Updated"] = datetime.now()
-                if new_status == "Completed" and update_line == current_line and current_idx < len(PRODUCTION_LINES) - 1:
-                    next_line = PRODUCTION_LINES[current_idx + 1]
-                    df.at[idx, "Current Line"] = next_line
-                    df.at[idx, next_line] = "In Progress"
-                    df.at[idx, f"{next_line}_time"] = datetime.now()
-                save_data(df)
-                st.success(f"✅ Updated {update_vin} at {update_line} to {new_status}")
-                st.rerun()
+# Section 3: Line Progress
+elif report_option == "Line Progress":
+    with st.container():
+        st.subheader("🏭 Line Progress Tracker")
+        line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
+        line_counts.columns = ["Production Line", "Vehicle Count"]
+        fig_progress = px.bar(
+            line_counts,
+            x="Production Line",
+            y="Vehicle Count",
+            title="Vehicles Currently at Each Production Line",
+            text="Vehicle Count"
+        )
+        fig_progress.update_traces(textposition="outside")
+        fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
+        st.plotly_chart(fig_progress, use_container_width=True)
+
+# Section 4: Vehicle Details
+elif report_option == "Vehicle Details":
+    if selected_vin:
+        selected_row = df[df["VIN"] == selected_vin].iloc[0]
+        st.subheader(f"🔎 Production Flow for {selected_vin}")
+        def create_flow_chart(row):
+            flow_data = [{
+                "Production Line": line,
+                "Status": row.get(line, "Not Started"),
+                "Color": STATUS_COLORS.get(row.get(line), "#808080")
+            } for line in PRODUCTION_LINES]
+            fig = px.bar(
+                pd.DataFrame(flow_data),
+                x="Production Line",
+                color="Status",
+                color_discrete_map=STATUS_COLORS,
+                title=f"Production Flow for {row['VIN']}",
+                text="Status"
+            )
+            fig.update_layout(xaxis_title="", yaxis_title="", showlegend=False, height=400)
+            fig.update_traces(textposition='outside')
+            return fig
+        st.plotly_chart(create_flow_chart(selected_row), use_container_width=True)
+        st.dataframe(filtered_df[["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES], height=600, use_container_width=True)
     else:
-        st.info("ℹ️ No VINs available to update.")
-    
+        st.info("ℹ️ Please select a VIN from the sidebar to view details.")
+
+# Section 5: Add/Update Vehicle
+elif report_option == "Add/Update Vehicle":
+    with st.expander("✏️ Add New Vehicle", expanded=True):
+        new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
+        new_model = st.selectbox("Model", ["C43"])
+        new_start_time = st.date_input("Start Date", datetime.now().date())
+        if st.button("Add Vehicle"):
+            if len(new_vin) != 5:
+                st.error("❌ VIN must be exactly 5 characters.")
+            elif new_vin in df["VIN"].values:
+                st.error("❌ This VIN already exists.")
+            else:
+                vehicle = {
+                    "VIN": new_vin,
+                    "Model": new_model,
+                    "Current Line": "Body Shop",
+                    "Start Time": datetime.combine(new_start_time, datetime.min.time()),
+                    "Last Updated": datetime.now(),
+                }
+                for line in PRODUCTION_LINES:
+                    vehicle[line] = "In Progress" if line == "Body Shop" else ""
+                    vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+                df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
+                save_data(df)
+                st.success(f"✅ {new_vin} added successfully!")
+                st.rerun()
+
+    with st.expander("✏️ Update Vehicle Status"):
+        if not df.empty and "VIN" in df.columns:
+            update_vin = st.selectbox("VIN to Update", df["VIN"])
+            current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
+            update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
+            new_status = st.selectbox("New Status", list(STATUS_COLORS.keys()))
+            if st.button("Update Status"):
+                idx = df[df["VIN"] == update_vin].index[0]
+                current_idx = PRODUCTION_LINES.index(current_line)
+                update_idx = PRODUCTION_LINES.index(update_line)
+                if new_status == "In Progress" and update_idx < current_idx:
+                    st.warning("⚠️ Cannot revert a completed line back to 'In Progress'.")
+                else:
+                    df.at[idx, update_line] = new_status
+                    df.at[idx, f"{update_line}_time"] = datetime.now()
+                    df.at[idx, "Last Updated"] = datetime.now()
+                    if new_status == "Completed" and update_line == current_line and current_idx < len(PRODUCTION_LINES) - 1:
+                        next_line = PRODUCTION_LINES[current_idx + 1]
+                        df.at[idx, "Current Line"] = next_line
+                        df.at[idx, next_line] = "In Progress"
+                        df.at[idx, f"{next_line}_time"] = datetime.now()
+                    save_data(df)
+                    st.success(f"✅ Updated {update_vin} at {update_line} to {new_status}")
+                    st.rerun()
+        else:
+            st.info("ℹ️ No VINs available to update.")
