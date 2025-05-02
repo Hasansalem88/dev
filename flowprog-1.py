@@ -62,7 +62,7 @@ def load_data():
 def save_data(df):
     df_copy = df.copy()
 
-    # 1. تأكد من تحويل كل القيم إلى string أو فارغة
+    # 1. Ensure all values are strings or empty
     for col in df_copy.columns:
         df_copy[col] = df_copy[col].apply(
             lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
@@ -70,10 +70,10 @@ def save_data(df):
             else str(x)
         )
 
-    # 2. تنظيف أي NaN
+    # 2. Clean up any NaN values
     df_copy = df_copy.fillna("")
 
-    # 3. مسح الشيت وتحديثه بشكل آمن
+    # 3. Clear and update sheet safely
     try:
         sheet.clear()
         sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
@@ -249,4 +249,3 @@ with st.expander("✏️ Update Vehicle Status"):
                 st.rerun()
     else:
         st.info("ℹ️ No VINs available to update.")
-            
