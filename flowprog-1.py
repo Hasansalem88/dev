@@ -146,8 +146,8 @@ today = pd.Timestamp.now().normalize()
 
 vehicles_today = df[df["Start Time"].dt.normalize() == today]
 completed_today = df[
-    df["Last Updated"].dt.normalize() == today &
-    df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
+    (df["Last Updated"].dt.normalize() == today) &
+    (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))
 ]
 in_progress = df[df["Current Line"] != "Delivery"]
 
