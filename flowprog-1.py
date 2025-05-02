@@ -137,6 +137,54 @@ if selected_vin:
     st.dataframe(status_df, height=600, use_container_width=True)
     st.download_button("⬇️ Download Filtered Data as CSV", status_df.to_csv(index=False), "vehicle_status.csv")
 
+# --- Daily Summary ---
+st.subheader("📅 Daily Production Summary")
+
+df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
+df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
+today = pd.Timestamp.now().normalize()
+
+vehicles_today = df[df["Start Time"].dt.normalize() == today]
+completed_today = df[
+    df["Last Updated"].dt.normalize() == today &
+    df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
+]
+in_progress = df[df["Current Line"] != "Delivery"]
+
+col1, col2, col3 = st.columns(3)
+col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
+col2.metric("✅ Completed Today", len(completed_today))
+col3.metric("🔄 Still In Progress", len(in_progress))
+
+# --- Daily completions trend ---
+daily_counts = df[df["Last Updated"].notna()].copy()
+daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
+daily_counts = daily_counts[
+    daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)
+]
+trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
+if not trend.empty:
+    st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
+else:
+    st.info("ℹ️ No completed vehicles yet to display in trend.")
+
+# --- Line Progress Tracker ---
+st.subheader("🏭 Line Progress Tracker")
+
+line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
+line_counts.columns = ["Production Line", "Vehicle Count"]
+
+fig_progress = px.bar(
+    line_counts,
+    x="Production Line",
+    y="Vehicle Count",
+    title="Vehicles Currently at Each Production Line",
+    text="Vehicle Count"
+)
+fig_progress.update_traces(textposition="outside")
+fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
+st.plotly_chart(fig_progress, use_container_width=True)
+
 # Add vehicle
 with st.expander("✏️ Add New Vehicle"):
     new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
