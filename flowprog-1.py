@@ -217,3 +217,32 @@ with st.expander("✏️ Add New Vehicle", expanded=True):
             save_data(df)
             st.success(f"✅ {new_vin} added successfully!")
             st.rerun()
+
+# Update vehicle
+with st.expander("✏️ Update Vehicle Status"):
+    if not df.empty and "VIN" in df.columns:
+        update_vin = st.selectbox("VIN to Update", df["VIN"])
+        current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
+        update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
+        new_status = st.selectbox("New Status", list(STATUS_COLORS.keys()))
+        if st.button("Update Status"):
+            idx = df[df["VIN"] == update_vin].index[0]
+            current_idx = PRODUCTION_LINES.index(current_line)
+            update_idx = PRODUCTION_LINES.index(update_line)
+            if new_status == "In Progress" and update_idx < current_idx:
+                st.warning("⚠️ Cannot revert a completed line back to 'In Progress'.")
+            else:
+                df.at[idx, update_line] = new_status
+                df.at[idx, f"{update_line}_time"] = datetime.now()
+                df.at[idx, "Last Updated"] = datetime.now()
+                if new_status == "Completed" and update_line == current_line and current_idx < len(PRODUCTION_LINES) - 1:
+                    next_line = PRODUCTION_LINES[current_idx + 1]
+                    df.at[idx, "Current Line"] = next_line
+                    df.at[idx, next_line] = "In Progress"
+                    df.at[idx, f"{next_line}_time"] = datetime.now()
+                save_data(df)
+                st.success(f"✅ Updated {update_vin} at {update_line} to {new_status}")
+                st.rerun()
+    else:
+        st.info("ℹ️ No VINs available to update.")
+    
