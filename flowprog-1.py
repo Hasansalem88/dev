@@ -159,23 +159,34 @@ elif report_option == "Line Progress":
         fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
         st.plotly_chart(fig_progress, use_container_width=True)
 
-# Section: Vehicle Details
+# Section 4: Vehicle Details
 elif report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
 
-    def highlight_cells(val):
-        color = ""
-        if val == "Completed":
-            color = "#d4edda"
-        elif val == "In Progress":
-            color = "#fff3cd"
-        elif val == "Repair Needed":
-            color = "#f8d7da"
-        return f"background-color: {color}" if color else ""
+    # Filter out the 'Start Time' and '*_time' columns before displaying
+    columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
-    display_df = df[[col for col in df.columns if not col.endswith("_time")]]
-    styled_df = display_df.style.applymap(highlight_cells)
-    st.dataframe(styled_df, use_container_width=True)
+    # Apply color styling based on status
+    def color_row(row):
+        status_colors = {
+            "Completed": "background-color: #d4edda",      # Light green
+            "In Progress": "background-color: #fff3cd",     # Light yellow/orange
+            "Repair Needed": "background-color: #f8d7da"    # Light red
+        }
+
+        row_status = None
+        if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
+            row_status = "Completed"
+        elif any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES):
+            row_status = "Repair Needed"
+        else:
+            row_status = "In Progress"
+
+        return [status_colors.get(row_status, "")] * len(row)
+
+    # Display the filtered and styled DataFrame
+    styled_df = df[columns_to_display].style.apply(color_row, axis=1)
+    st.write(styled_df)
 
 # Section: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
