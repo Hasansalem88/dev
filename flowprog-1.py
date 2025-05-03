@@ -181,11 +181,15 @@ def highlight_vehicle_status(row):
 elif report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
 
-    def color_row(row):
-        color = STATUS_COLORS.get(row["Current Line"], "#f0f0f0")
-        return [f"background-color: {color}"] * len(row)
+    def highlight_vehicle_status(row):
+        if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
+            return ["background-color: #d4edda"] * len(row)  # Green
+        elif any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES):
+            return ["background-color: #f8d7da"] * len(row)  # Red
+        else:
+            return ["background-color: #fff3cd"] * len(row)  # Yellow
 
-    styled_df = df.style.apply(color_row, axis=1)
+    styled_df = df.style.apply(highlight_vehicle_status, axis=1)
     st.write(styled_df)
         
 # Section 5: Add/Update Vehicle
