@@ -179,11 +179,14 @@ def highlight_vehicle_status(row):
 
 # Section 4: Vehicle Details
 elif report_option == "Vehicle Details":
-    st.subheader("🚘 Vehicle List and Status")
-    if not filtered_df.empty:
-        display_cols = ["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES
-        styled_df = filtered_df[display_cols].style.apply(highlight_vehicle_status, axis=1)
-st.write(styled_df)
+    st.subheader("🚘 All Vehicle Details")
+
+    def color_row(row):
+        color = STATUS_COLORS.get(row["Current Line"], "#f0f0f0")
+        return [f"background-color: {color}"] * len(row)
+
+    styled_df = df.style.apply(color_row, axis=1)
+    st.write(styled_df)
     else:
         st.info("ℹ️ No vehicles match the selected filters.")
         
