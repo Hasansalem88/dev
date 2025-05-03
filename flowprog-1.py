@@ -88,22 +88,18 @@ report_option = st.sidebar.radio("Select Report Section", [
     "Add/Update Vehicle"
 ])
 
-# Sidebar Filters
+# Sidebar Filters (VIN filter removed)
 with st.sidebar:
     st.header("🔍 Filters")
     selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
     selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
-    vin_search = st.text_input("Search VIN (partial match allowed)").strip().upper()
     if st.button("Reset Filters"):
         selected_status = "All"
         selected_line = "All"
-        vin_search = ""
 
-# Apply filters
+# Apply filters (VIN filter logic removed)
 filtered_df = df.copy()
 if "VIN" in filtered_df.columns:
-    if vin_search:
-        filtered_df = filtered_df[filtered_df["VIN"].str.upper().str.contains(vin_search)]
     if selected_status != "All":
         if selected_status == "Completed":
             filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
@@ -113,12 +109,9 @@ if "VIN" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
 
     st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
-    valid_vins = filtered_df["VIN"].tolist()
-    selected_vin = st.sidebar.selectbox("Select Vehicle (VIN)", valid_vins) if valid_vins else None
 else:
     st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
-    selected_vin = None
-
+    
 # Section 1: Dashboard Summary
 if report_option == "Dashboard Summary":
     with st.container():
@@ -168,30 +161,12 @@ elif report_option == "Line Progress":
 
 # Section 4: Vehicle Details
 elif report_option == "Vehicle Details":
-    if selected_vin:
-        selected_row = df[df["VIN"] == selected_vin].iloc[0]
-        st.subheader(f"🔎 Production Flow for {selected_vin}")
-        def create_flow_chart(row):
-            flow_data = [{
-                "Production Line": line,
-                "Status": row.get(line, "Not Started"),
-                "Color": STATUS_COLORS.get(row.get(line), "#808080")
-            } for line in PRODUCTION_LINES]
-            fig = px.bar(
-                pd.DataFrame(flow_data),
-                x="Production Line",
-                color="Status",
-                color_discrete_map=STATUS_COLORS,
-                title=f"Production Flow for {row['VIN']}",
-                text="Status"
-            )
-            fig.update_layout(xaxis_title="", yaxis_title="", showlegend=False, height=400)
-            fig.update_traces(textposition='outside')
-            return fig
-        st.plotly_chart(create_flow_chart(selected_row), use_container_width=True)
-        st.dataframe(filtered_df[["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES], height=600, use_container_width=True)
+    st.subheader("🚘 Vehicle List and Status")
+    if not filtered_df.empty:
+        display_cols = ["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES
+        st.dataframe(filtered_df[display_cols], height=600, use_container_width=True)
     else:
-        st.info("ℹ️ Please select a VIN from the sidebar to view details.")
+        st.info("ℹ️ No vehicles match the selected filters.")
         
 # Section 5: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
