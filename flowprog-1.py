@@ -174,6 +174,7 @@ elif report_option == "Vehicle Details":
             "Repair Needed": "background-color: #f8d7da"    # Light red
         }
 
+        # Identify row status based on the production lines
         row_status = None
         if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
             row_status = "Completed"
@@ -182,9 +183,10 @@ elif report_option == "Vehicle Details":
         else:
             row_status = "In Progress"
 
+        # Apply color based on status
         return [status_colors.get(row_status, "")] * len(row)
 
-    # Display the filtered and styled DataFrame
+    # Display the filtered and styled DataFrame (only relevant columns)
     styled_df = df[columns_to_display].style.apply(color_row, axis=1)
     st.write(styled_df)
 
