@@ -172,8 +172,10 @@ elif report_option == "Vehicle Details":
             return "background-color: #f8d7da"  # light red
         return ""
 
-    styled_df = df.style.applymap(highlight_cells)
-    st.dataframe(styled_df, use_container_width=True)
+    # Exclude columns ending with "_time" just for display
+display_df = df[[col for col in df.columns if not col.endswith("_time")]]
+styled_df = display_df.style.applymap(highlight_cells)
+st.dataframe(styled_df, use_container_width=True)
 
 # Section 5: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
