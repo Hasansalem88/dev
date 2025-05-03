@@ -183,7 +183,7 @@ elif report_option == "Vehicle Details":
     if not filtered_df.empty:
         display_cols = ["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES
         styled_df = filtered_df[display_cols].style.apply(highlight_vehicle_status, axis=1)
-st.dataframe(styled_df, height=600, use_container_width=True)
+st.write(styled_df)
     else:
         st.info("ℹ️ No vehicles match the selected filters.")
         
