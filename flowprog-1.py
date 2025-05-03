@@ -81,10 +81,10 @@ except Exception as e:
 # Sidebar Navigation
 st.sidebar.title("📂 Report Menu")
 report_option = st.sidebar.radio("Select Report Section", [
+    "Vehicle Details",
     "Dashboard Summary",
     "Production Trend",
     "Line Progress",
-    "Vehicle Details",
     "Add/Update Vehicle"
 ])
 
