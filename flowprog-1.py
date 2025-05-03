@@ -119,6 +119,33 @@ else:
     st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
     selected_vin = None
 
+# Section 4: Vehicle Details
+elif report_option == "Vehicle Details":
+    if selected_vin:
+        selected_row = df[df["VIN"] == selected_vin].iloc[0]
+        st.subheader(f"🔎 Production Flow for {selected_vin}")
+        def create_flow_chart(row):
+            flow_data = [{
+                "Production Line": line,
+                "Status": row.get(line, "Not Started"),
+                "Color": STATUS_COLORS.get(row.get(line), "#808080")
+            } for line in PRODUCTION_LINES]
+            fig = px.bar(
+                pd.DataFrame(flow_data),
+                x="Production Line",
+                color="Status",
+                color_discrete_map=STATUS_COLORS,
+                title=f"Production Flow for {row['VIN']}",
+                text="Status"
+            )
+            fig.update_layout(xaxis_title="", yaxis_title="", showlegend=False, height=400)
+            fig.update_traces(textposition='outside')
+            return fig
+        st.plotly_chart(create_flow_chart(selected_row), use_container_width=True)
+        st.dataframe(filtered_df[["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES], height=600, use_container_width=True)
+    else:
+        st.info("ℹ️ Please select a VIN from the sidebar to view details.")
+
 # Section 1: Dashboard Summary
 if report_option == "Dashboard Summary":
     with st.container():
@@ -165,33 +192,6 @@ elif report_option == "Line Progress":
         fig_progress.update_traces(textposition="outside")
         fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
         st.plotly_chart(fig_progress, use_container_width=True)
-
-# Section 4: Vehicle Details
-elif report_option == "Vehicle Details":
-    if selected_vin:
-        selected_row = df[df["VIN"] == selected_vin].iloc[0]
-        st.subheader(f"🔎 Production Flow for {selected_vin}")
-        def create_flow_chart(row):
-            flow_data = [{
-                "Production Line": line,
-                "Status": row.get(line, "Not Started"),
-                "Color": STATUS_COLORS.get(row.get(line), "#808080")
-            } for line in PRODUCTION_LINES]
-            fig = px.bar(
-                pd.DataFrame(flow_data),
-                x="Production Line",
-                color="Status",
-                color_discrete_map=STATUS_COLORS,
-                title=f"Production Flow for {row['VIN']}",
-                text="Status"
-            )
-            fig.update_layout(xaxis_title="", yaxis_title="", showlegend=False, height=400)
-            fig.update_traces(textposition='outside')
-            return fig
-        st.plotly_chart(create_flow_chart(selected_row), use_container_width=True)
-        st.dataframe(filtered_df[["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES], height=600, use_container_width=True)
-    else:
-        st.info("ℹ️ Please select a VIN from the sidebar to view details.")
 
 # Section 5: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
