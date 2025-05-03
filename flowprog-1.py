@@ -111,8 +111,8 @@ if "VIN" in filtered_df.columns:
     st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
 else:
     st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
-    
-# Section 1: Dashboard Summary
+
+# Section: Dashboard Summary
 if report_option == "Dashboard Summary":
     with st.container():
         st.subheader("📅 Daily Production Summary")
@@ -127,8 +127,8 @@ if report_option == "Dashboard Summary":
         col2.metric("✅ Completed Today", len(completed_today))
         col3.metric("🔄 Still In Progress", len(in_progress))
 
-# --- Daily completions trend ---
-if report_option == "Production Trend":
+# Section: Production Trend
+elif report_option == "Production Trend":
     with st.container():
         st.subheader("📈 Daily Completions Trend")
         daily_counts = df[df["Last Updated"].notna()].copy()
@@ -142,7 +142,7 @@ if report_option == "Production Trend":
         else:
             st.info("ℹ️ No completed vehicles yet to display in trend.")
 
-# Section 3: Line Progress
+# Section: Line Progress
 elif report_option == "Line Progress":
     with st.container():
         st.subheader("🏭 Line Progress Tracker")
@@ -159,25 +159,25 @@ elif report_option == "Line Progress":
         fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
         st.plotly_chart(fig_progress, use_container_width=True)
 
-# Section 4: Vehicle Details
+# Section: Vehicle Details
 elif report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
 
     def highlight_cells(val):
+        color = ""
         if val == "Completed":
-            return "background-color: #d4edda"  # light green
+            color = "#d4edda"
         elif val == "In Progress":
-            return "background-color: #fff3cd"  # light orange
+            color = "#fff3cd"
         elif val == "Repair Needed":
-            return "background-color: #f8d7da"  # light red
-        return ""
+            color = "#f8d7da"
+        return f"background-color: {color}" if color else ""
 
-    # Exclude columns ending with "_time" just for display
-display_df = df[[col for col in df.columns if not col.endswith("_time")]]
-styled_df = display_df.style.applymap(highlight_cells)
-st.dataframe(styled_df, use_container_width=True)
+    display_df = df[[col for col in df.columns if not col.endswith("_time")]]
+    styled_df = display_df.style.applymap(highlight_cells)
+    st.dataframe(styled_df, use_container_width=True)
 
-# Section 5: Add/Update Vehicle
+# Section: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
     with st.expander("✏️ Add New Vehicle", expanded=True):
         new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
