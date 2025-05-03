@@ -159,12 +159,31 @@ elif report_option == "Line Progress":
         fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
         st.plotly_chart(fig_progress, use_container_width=True)
 
+def highlight_vehicle_status(row):
+    # Check overall line status
+    status_colors = {
+        "Completed": "background-color: #d4edda",      # Light green
+        "In Progress": "background-color: #fff3cd",     # Light yellow/orange
+        "Repair Needed": "background-color: #f8d7da"    # Light red
+    }
+
+    row_status = None
+    if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
+        row_status = "Completed"
+    elif any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES):
+        row_status = "Repair Needed"
+    else:
+        row_status = "In Progress"
+
+    return [status_colors.get(row_status, "")] * len(row)
+
 # Section 4: Vehicle Details
 elif report_option == "Vehicle Details":
     st.subheader("🚘 Vehicle List and Status")
     if not filtered_df.empty:
         display_cols = ["VIN", "Model", "Current Line", "Last Updated"] + PRODUCTION_LINES
-        st.dataframe(filtered_df[display_cols], height=600, use_container_width=True)
+        styled_df = filtered_df[display_cols].style.apply(highlight_vehicle_status, axis=1)
+st.dataframe(styled_df, height=600, use_container_width=True)
     else:
         st.info("ℹ️ No vehicles match the selected filters.")
         
