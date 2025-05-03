@@ -166,15 +166,16 @@ elif report_option == "Vehicle Details":
     # Filter out the 'Start Time' and '*_time' columns before displaying
     columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
-    # Apply color styling based on status
-    def color_row(row):
+    # Apply color styling based on status for individual cells
+    def color_cells(val, row, PRODUCTION_LINES):
+        # Status colors mapping
         status_colors = {
             "Completed": "background-color: #d4edda",      # Light green
             "In Progress": "background-color: #fff3cd",     # Light yellow/orange
             "Repair Needed": "background-color: #f8d7da"    # Light red
         }
-
-        # Identify row status based on the production lines
+        
+        # Check the status of the row to apply the color
         row_status = None
         if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
             row_status = "Completed"
@@ -183,8 +184,28 @@ elif report_option == "Vehicle Details":
         else:
             row_status = "In Progress"
 
-        # Apply color based on status
-        return [status_colors.get(row_status, "")] * len(row)
+        # Apply the correct background color for the specific cell based on the row status
+        if val in ["Completed", "In Progress", "Repair Needed"]:
+            return status_colors.get(val, "")
+        return ""
+
+    # Generate a list of color styles for each cell based on its value
+    def apply_style_to_df(df, PRODUCTION_LINES):
+        styles = pd.DataFrame("", index=df.index, columns=df.columns)
+
+        for i, row in df.iterrows():
+            for col in df.columns:
+                styles.at[i, col] = color_cells(row[col], row, PRODUCTION_LINES)
+
+        return styles
+
+    # Apply styles and filter the dataframe to only show necessary columns
+    styled_df = df[columns_to_display]
+    styles = apply_style_to_df(styled_df, PRODUCTION_LINES)
+
+    # Display the dataframe with the styles
+    st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
+
 
     # Display the filtered and styled DataFrame (only relevant columns)
     styled_df = df[columns_to_display].style.apply(color_row, axis=1)
