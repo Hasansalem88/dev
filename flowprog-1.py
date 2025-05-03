@@ -167,7 +167,7 @@ elif report_option == "Vehicle Details":
     columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
     # Apply color styling based on status for individual cells
-    def color_cells(val, row, PRODUCTION_LINES):
+    def color_cells(val):
         # Status colors mapping
         status_colors = {
             "Completed": "background-color: #d4edda",      # Light green
@@ -175,41 +175,27 @@ elif report_option == "Vehicle Details":
             "Repair Needed": "background-color: #f8d7da"    # Light red
         }
         
-        # Check the status of the row to apply the color
-        row_status = None
-        if all(row.get(line) == "Completed" for line in PRODUCTION_LINES):
-            row_status = "Completed"
-        elif any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES):
-            row_status = "Repair Needed"
-        else:
-            row_status = "In Progress"
-
-        # Apply the correct background color for the specific cell based on the row status
+        # Apply the correct background color for the specific cell based on its value
         if val in ["Completed", "In Progress", "Repair Needed"]:
             return status_colors.get(val, "")
         return ""
 
     # Generate a list of color styles for each cell based on its value
-    def apply_style_to_df(df, PRODUCTION_LINES):
+    def apply_style_to_df(df):
         styles = pd.DataFrame("", index=df.index, columns=df.columns)
 
         for i, row in df.iterrows():
             for col in df.columns:
-                styles.at[i, col] = color_cells(row[col], row, PRODUCTION_LINES)
+                styles.at[i, col] = color_cells(row[col])
 
         return styles
 
     # Apply styles and filter the dataframe to only show necessary columns
     styled_df = df[columns_to_display]
-    styles = apply_style_to_df(styled_df, PRODUCTION_LINES)
+    styles = apply_style_to_df(styled_df)
 
     # Display the dataframe with the styles
     st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
-
-
-    # Display the filtered and styled DataFrame (only relevant columns)
-    styled_df = df[columns_to_display].style.apply(color_row, axis=1)
-    st.write(styled_df)
 
 # Section: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
