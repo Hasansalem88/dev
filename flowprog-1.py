@@ -187,8 +187,6 @@ elif report_option == "Vehicle Details":
 
     styled_df = df.style.apply(color_row, axis=1)
     st.write(styled_df)
-    else:
-        st.info("ℹ️ No vehicles match the selected filters.")
         
 # Section 5: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
