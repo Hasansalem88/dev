@@ -161,6 +161,8 @@ if report_option == "Vehicle Details":
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             adjust_column_widths(writer, df)  # Adjust column widths
+            
+            # Get the worksheet after writing the data
             worksheet = writer.sheets['Vehicle Details']
             
             # Apply formatting after writing the data
