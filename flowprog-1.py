@@ -162,17 +162,17 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Reload the DataFrame to ensure it's the latest
         df = load_data()
 
-        # Display the whole DataFrame temporarily to inspect data
-        st.write("Current DataFrame:", df)
+        # Debug: Display the VINs from the DataFrame
+        st.write("Loaded VINs from DataFrame (Debug):", df["VIN"].values)
 
-        # Display VINs in a text area to prevent disappearing too quickly
-        st.text_area("Loaded VINs from DataFrame (scrollable)", "\n".join(df["VIN"].values), height=200)
-
-        # Clean and ensure consistent VIN format
+        # Clean and ensure consistent VIN format for comparison
         new_vin_clean = new_vin.strip().upper()  # Remove leading/trailing spaces and convert to uppercase
 
         # Normalize existing VINs: Clean and uppercase them
         existing_vins_clean = df["VIN"].str.strip().str.upper().values
+
+        # Debug: Check the cleaned existing VINs
+        st.write("Cleaned Existing VINs (Debug):", existing_vins_clean)
 
         # Check if the new VIN already exists in the DataFrame (case-insensitive)
         if new_vin_clean in existing_vins_clean:  # Compare the cleaned VINs
