@@ -133,15 +133,15 @@ st.subheader("✏️ Add / Update Vehicle")
 
 with st.expander("➕ Add New Vehicle", expanded=True):
     new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
-
-    # Normalize existing VINs for comparison
-    existing_vins = df["VIN"].astype(str).str.strip().str.upper()
+    
+    # Normalize existing VINs
+    existing_vins = df["VIN"].dropna().astype(str).str.strip().str.upper().tolist()
 
     if new_vin:
-        if len(new_vin) != 5 or not new_vin.isalnum():
-            st.warning("⚠️ VIN must be exactly 5 alphanumeric characters.")
-        elif new_vin in existing_vins.values:
-            st.error("❌ This VIN already exists. Please enter a unique VIN.")
+        if len(new_vin) != 5:
+            st.warning("⚠️ VIN must be exactly 5 characters.")
+        elif new_vin in existing_vins:
+            st.error("❌ This VIN already exists.")
         else:
             new_model = st.selectbox("Model", ["C43"])
             new_start_time = st.date_input("Start Date", datetime.now().date())
