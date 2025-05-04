@@ -144,7 +144,6 @@ if st.button("Add Vehicle"):
         st.error("❌ This VIN already exists.")
     else:
         # proceed with adding the vehicle
-        
     new_model = st.selectbox("Model", ["C43"])
     new_start_time = st.date_input("Start Date", datetime.now().date())
     if st.button("Add Vehicle"):
