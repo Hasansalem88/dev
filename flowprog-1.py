@@ -203,21 +203,6 @@ if update_vin:
             st.rerun()
 
 with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
-    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
-    selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
-    bulk_new_status = st.selectbox("New Status (Bulk)", ["Completed", "In Progress", "Repair Needed"])
-    
-    if st.button("Bulk Update"):
-        for vin in selected_vins:
-            idx = df[df["VIN"] == vin].index[0]
-            df.at[idx, selected_line] = new_status
-            df.at[idx, f"{selected_line}_time"] = datetime.now()
-            df.at[idx, "Last Updated"] = datetime.now()
-        save_data(df)
-        st.success(f"✅ Updated {len(selected_vins)} vehicles successfully!")
-        st.rerun()
-
-with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
     selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique(), key="bulk_vins_select")
     selected_line = st.selectbox("Production Line", PRODUCTION_LINES, key="bulk_line")
     bulk_new_status = st.selectbox("New Status (Bulk)", ["Completed", "In Progress", "Repair Needed"], key="bulk_status")
