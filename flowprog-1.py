@@ -114,6 +114,15 @@ if "VIN" in filtered_df.columns:
 else:
     st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
 
+# Function to export DataFrame to Excel and provide download link
+def export_to_excel(df):
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, index=False, sheet_name='Vehicle Details')
+    writer.save()
+    output.seek(0)
+    return output
+
 # Section: Vehicle Details
 if report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
@@ -151,6 +160,14 @@ if report_option == "Vehicle Details":
 
     # Display the dataframe with the styles
     st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
+
+    # Add the download button for Excel file
+    st.download_button(
+        label="Download as Excel 📥",
+        data=export_to_excel(df),
+        file_name="vehicle_details.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 # Section: Dashboard Summary
 elif report_option == "Dashboard Summary":
