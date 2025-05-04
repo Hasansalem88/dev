@@ -258,33 +258,36 @@ with st.expander("🗑️ Remove Vehicle", expanded=True):
             st.rerun()
 
 # Section: Bulk Update Status
-st.subheader("📊 Bulk Update Vehicle Status")
+if st.session_state.get("logged_in"):
+    st.subheader("📊 Bulk Update Vehicle Status")
 
-with st.expander("🔄 Bulk Update Status", expanded=True):
-    bulk_update_vin = st.text_area("Enter VINs (separate by comma)").strip().upper()
-    bulk_new_status = st.selectbox("New Status for All VINs", ["Completed", "In Progress", "Repair Needed"])
+    with st.expander("🔄 Bulk Update Status", expanded=True):
+        bulk_update_vin = st.text_area("Enter VINs (separate by comma)").strip().upper()
+        bulk_new_status = st.selectbox("New Status for All VINs", ["Completed", "In Progress", "Repair Needed"])
 
-    if st.button("Update Bulk Status"):
-        if bulk_update_vin:
-            vins = [vin.strip().zfill(5) for vin in bulk_update_vin.split(",")]
-            for vin in vins:
-                if vin in df["VIN"].values:
-                    idx = df[df["VIN"] == vin].index[0]
-                    current_line = df.at[idx, "Current Line"]
-                    if bulk_new_status == "Completed":
-                        next_line = get_next_line(current_line)
-                        if next_line:
+        if st.button("Update Bulk Status"):
+            if bulk_update_vin:
+                vins = [vin.strip().zfill(5) for vin in bulk_update_vin.split(",")]
+                for vin in vins:
+                    if vin in df["VIN"].values:
+                        idx = df[df["VIN"] == vin].index[0]
+                        current_line = df.at[idx, "Current Line"]
+                        if bulk_new_status == "Completed":
+                            next_line = get_next_line(current_line)
+                            if next_line:
+                                df.at[idx, current_line] = bulk_new_status
+                                df.at[idx, f"{current_line}_time"] = datetime.now()
+                                df.at[idx, "Current Line"] = next_line
+                                df.at[idx, f"{next_line}_time"] = datetime.now()
+                                # Set next line's status to "In Progress"
+                                df.at[idx, next_line] = "In Progress"
+                                df.at[idx, f"{next_line}_time"] = datetime.now()
+                        else:
                             df.at[idx, current_line] = bulk_new_status
                             df.at[idx, f"{current_line}_time"] = datetime.now()
-                            df.at[idx, "Current Line"] = next_line
-                            df.at[idx, f"{next_line}_time"] = datetime.now()
-                            # Set next line's status to "In Progress"
-                            df.at[idx, next_line] = "In Progress"
-                            df.at[idx, f"{next_line}_time"] = datetime.now()
-                    else:
-                        df.at[idx, current_line] = bulk_new_status
-                        df.at[idx, f"{current_line}_time"] = datetime.now()
-                    df.at[idx, "Last Updated"] = datetime.now()
-            save_data(df)
-            st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
-            st.rerun()
+                        df.at[idx, "Last Updated"] = datetime.now()
+                save_data(df)
+                st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
+                st.rerun()
+else:
+    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
