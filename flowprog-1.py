@@ -4,7 +4,6 @@ from datetime import datetime
 import gspread
 from google.oauth2 import service_account
 from io import BytesIO
-import xlsxwriter
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Assembly Line Tracker")
@@ -111,62 +110,22 @@ if report_option == "Vehicle Details":
     # Filter out the 'Start Time' and '*_time' columns before displaying
     columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
-    # Apply color styling based on status for individual cells
-    def color_cells(val):
-        # Status colors mapping
-        status_colors = {
-            "Completed": "background-color: #d4edda",  # Light green
-            "In Progress": "background-color: #fff3cd",  # Light yellow/orange
-            "Repair Needed": "background-color: #f8d7da"  # Light red
-        }
-        
-        # Apply the correct background color for the specific cell based on its value
-        if val in ["Completed", "In Progress", "Repair Needed"]:
-            return status_colors.get(val, "")
-        return ""
+    # Display the dataframe
+    st.write(filtered_df[columns_to_display])
 
-    # Generate a list of color styles for each cell based on its value
-    def apply_style_to_df(df):
-        styles = pd.DataFrame("", index=df.index, columns=df.columns)
-
-        for i, row in df.iterrows():
-            for col in df.columns:
-                styles.at[i, col] = color_cells(row[col])
-
-        return styles
-
-    # Apply styles and filter the dataframe to only show necessary columns
-    styled_df = df[columns_to_display]
-    styles = apply_style_to_df(styled_df)
-
-    # Adjust column width based on the max content length in each column
-    def adjust_column_widths(worksheet, df):
-        for i, col in enumerate(df.columns):
-            max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2  # +2 for some padding
-            worksheet.set_column(i, i, max_length)
-
-    # Display the dataframe with the styles
-    st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
-
-    # Button to download as Excel with formatting and column width adjustment
+    # Button to download as Excel
     def export_to_excel(df):
         output = BytesIO()
         
-        # Create a new Excel file with xlsxwriter engine
+        # Create a new Excel file without formatting
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             worksheet = writer.sheets['Vehicle Details']
             
-            # Apply column widths and formatting after writing the data
-            adjust_column_widths(worksheet, df)
-            
-            # Apply formatting after writing the data
-            cell_format = worksheet.add_format({'text_wrap': True})  # Ensure format is applied after the sheet is created
-            
-            # Loop through each cell to apply the formatting
-            for i, row in df.iterrows():
-                for j, value in enumerate(row):
-                    worksheet.write(i + 1, j, value, cell_format)
+            # Adjust column widths to fit content
+            for i, col in enumerate(df.columns):
+                max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2  # +2 for some padding
+                worksheet.set_column(i, i, max_length)
 
         output.seek(0)
         return output
@@ -174,7 +133,7 @@ if report_option == "Vehicle Details":
     # Trigger download
     st.download_button(
         label="Download Vehicle Details as Excel",
-        data=export_to_excel(styled_df),
+        data=export_to_excel(filtered_df),
         file_name="vehicle_details.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
@@ -211,19 +170,12 @@ elif report_option == "Add/Update Vehicle":
             update_vin = st.selectbox("VIN to Update", df["VIN"])
             current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
             update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
-            new_status = st.selectbox("New Status", list(STATUS_COLORS.keys()))
+            new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
             if st.button("Update Status"):
                 idx = df[df["VIN"] == update_vin].index[0]
-                current_idx = PRODUCTION_LINES.index(current_line)
-                update_idx = PRODUCTION_LINES.index(update_line)
-                if new_status == "In Progress" and update_idx < current_idx:
-                    st.warning("⚠️ Cannot revert a completed line back to 'In Progress'.")
-                else:
-                    df.at[idx, update_line] = new_status
-                    df.at[idx, f"{update_line}_time"] = datetime.now()
-                    df.at[idx, "Last Updated"] = datetime.now()
-                    if new_status == "Completed" and update_line == current_line and current_idx < len(PRODUCTION_LINES) - 1:
-                        df.at[idx, "Current Line"] = PRODUCTION_LINES[current_idx + 1]
-                    save_data(df)
-                    st.success("✅ Status updated successfully!")
-                    st.rerun()
+                df.at[idx, update_line] = new_status
+                df.at[idx, f"{update_line}_time"] = datetime.now()
+                df.at[idx, "Last Updated"] = datetime.now()
+                save_data(df)
+                st.success("✅ Status updated successfully!")
+                st.rerun()
