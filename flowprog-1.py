@@ -245,7 +245,7 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
 
 # Section: Delete Vehicle
 if st.session_state.get("logged_in"):
-st.subheader("🗑️ Delete Vehicle")
+    st.subheader("🗑️ Delete Vehicle")
 
 with st.expander("🗑️ Remove Vehicle", expanded=True):
     vin_to_delete = st.selectbox("Select VIN to Delete", df["VIN"])
