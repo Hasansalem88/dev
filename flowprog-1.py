@@ -261,7 +261,7 @@ if st.session_state.get("logged_in"):
                 st.success(f"✅ Vehicle {vin_to_delete} has been deleted.")
                 st.rerun()
 else:
-    st.info("🔒 Update Status Admin Only.")
+    st.info("🔒 Update Status - Admin Only.")
     
 # Section: Bulk Update Status
 if st.session_state.get("logged_in"):
@@ -296,4 +296,4 @@ if st.session_state.get("logged_in"):
                 st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
                 st.rerun()
 else:
-    st.info("🔒 Delet Vin Admin Only.")
+    st.info("🔒 Delete Vin - Admin Only.")
