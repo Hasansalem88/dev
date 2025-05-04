@@ -39,9 +39,9 @@ PRODUCTION_LINES = [
 ]
 
 STATUS_COLORS = {
-    "In Progress": "#FFA500",
-    "Completed": "#008000",
-    "Repair Needed": "#FF0000",
+    "In Progress": "#FFA500",  # Orange
+    "Completed": "#008000",  # Green
+    "Repair Needed": "#FF0000",  # Red
 }
 
 # Load or initialize data
@@ -82,7 +82,7 @@ except Exception as e:
 # Sidebar Navigation
 st.sidebar.title("📂 Report Menu")
 report_option = st.sidebar.radio("Select Report Section", [
-    "Vehicle Details",
+    "Vehicle Details",  # First option
     "Dashboard Summary",
     "Production Trend",
     "Line Progress",
@@ -100,68 +100,18 @@ with st.sidebar:
 
 # Apply filters
 filtered_df = df.copy()
-if "VIN" in filtered_df.columns:
-    if selected_status != "All":
-        if selected_status == "Completed":
-            filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-        else:
-            filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
-    if selected_line != "All":
-        filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
+if selected_status != "All":
+    if selected_status == "Completed":
+        filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+    else:
+        filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
+if selected_line != "All":
+    filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
 
-    st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
-else:
-    st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
+st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
 
-# Section: Dashboard Summary
-if report_option == "Dashboard Summary":
-    with st.container():
-        st.subheader("📅 Daily Production Summary")
-        col1, col2, col3 = st.columns(3)
-        df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
-        df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
-        today = pd.Timestamp.now().normalize()
-        vehicles_today = df[df["Start Time"].dt.normalize() == today]
-        completed_today = df[(df["Last Updated"].dt.normalize() == today) & (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
-        in_progress = df[df["Current Line"] != "Delivery"]
-        col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
-        col2.metric("✅ Completed Today", len(completed_today))
-        col3.metric("🔄 Still In Progress", len(in_progress))
-
-# Section: Production Trend
-elif report_option == "Production Trend":
-    with st.container():
-        st.subheader("📈 Daily Completions Trend")
-        daily_counts = df[df["Last Updated"].notna()].copy()
-        daily_counts["Last Updated"] = pd.to_datetime(daily_counts["Last Updated"], errors="coerce")
-        daily_counts = daily_counts[daily_counts["Last Updated"].notna()]
-        daily_counts = daily_counts[daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-        daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
-        trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
-        if not trend.empty:
-            st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
-        else:
-            st.info("ℹ️ No completed vehicles yet to display in trend.")
-
-# Section: Line Progress
-elif report_option == "Line Progress":
-    with st.container():
-        st.subheader("🏭 Line Progress Tracker")
-        line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
-        line_counts.columns = ["Production Line", "Vehicle Count"]
-        fig_progress = px.bar(
-            line_counts,
-            x="Production Line",
-            y="Vehicle Count",
-            title="Vehicles Currently at Each Production Line",
-            text="Vehicle Count"
-        )
-        fig_progress.update_traces(textposition="outside")
-        fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
-        st.plotly_chart(fig_progress, use_container_width=True)
-
-# Section 4: Vehicle Details
-elif report_option == "Vehicle Details":
+# Section: Vehicle Details
+if report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
 
     # Filter out the 'Start Time' and '*_time' columns before displaying
@@ -171,9 +121,9 @@ elif report_option == "Vehicle Details":
     def color_cells(val):
         # Status colors mapping
         status_colors = {
-            "Completed": "background-color: #d4edda",      # Light green
-            "In Progress": "background-color: #fff3cd",     # Light yellow/orange
-            "Repair Needed": "background-color: #f8d7da"    # Light red
+            "Completed": "background-color: #d4edda",  # Light green
+            "In Progress": "background-color: #fff3cd",  # Light yellow/orange
+            "Repair Needed": "background-color: #f8d7da"  # Light red
         }
         
         # Apply the correct background color for the specific cell based on its value
@@ -195,14 +145,33 @@ elif report_option == "Vehicle Details":
     styled_df = df[columns_to_display]
     styles = apply_style_to_df(styled_df)
 
+    # Adjust column width based on the max content length in each column
+    def adjust_column_widths(writer, df):
+        worksheet = writer.sheets['Vehicle Details']
+        for i, col in enumerate(df.columns):
+            max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2  # +2 for some padding
+            worksheet.set_column(i, i, max_length)
+
     # Display the dataframe with the styles
     st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
 
-    # Button to download as Excel
+    # Button to download as Excel with formatting and column width adjustment
     def export_to_excel(df):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
+            adjust_column_widths(writer, df)  # Adjust column widths
+            worksheet = writer.sheets['Vehicle Details']
+            
+            # Apply styling
+            for i, row in df.iterrows():
+                for j, value in enumerate(row):
+                    cell_format = worksheet.add_format({'text_wrap': True})
+                    if isinstance(value, str) and value in STATUS_COLORS:
+                        worksheet.write(i + 1, j, value, cell_format)
+                    else:
+                        worksheet.write(i + 1, j, value, cell_format)
+
         output.seek(0)
         return output
 
