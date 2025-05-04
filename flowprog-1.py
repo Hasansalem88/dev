@@ -114,6 +114,7 @@ def export_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Vehicle Details')
+        workbook  = writer.book  # Get the workbook object
         worksheet = writer.sheets['Vehicle Details']
 
         # Apply column width adjustments
