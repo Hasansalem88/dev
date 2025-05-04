@@ -117,11 +117,29 @@ if report_option == "Vehicle Details":
     def export_to_excel(df):
         output = BytesIO()
         
-        # Create a new Excel file without formatting
+        # Create a new Excel file with formatting
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             worksheet = writer.sheets['Vehicle Details']
             
+            # Define cell formatting
+            completed_format = worksheet.add_format({'bg_color': '#A9DFBF'})  # Green
+            in_progress_format = worksheet.add_format({'bg_color': '#F9E79F'})  # Yellow
+            repair_needed_format = worksheet.add_format({'bg_color': '#F1948A'})  # Red
+            
+            # Apply formatting to cells based on status
+            for row_idx, row in df.iterrows():
+                for col_idx, col_name in enumerate(df.columns):
+                    status = row[col_name]
+                    if status == "Completed":
+                        worksheet.write(row_idx + 1, col_idx, status, completed_format)
+                    elif status == "In Progress":
+                        worksheet.write(row_idx + 1, col_idx, status, in_progress_format)
+                    elif status == "Repair Needed":
+                        worksheet.write(row_idx + 1, col_idx, status, repair_needed_format)
+                    else:
+                        worksheet.write(row_idx + 1, col_idx, status)
+
             # Adjust column widths to fit content
             for i, col in enumerate(df.columns):
                 max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2  # +2 for some padding
