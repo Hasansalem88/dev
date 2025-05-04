@@ -244,6 +244,7 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
             st.rerun()
 
 # Section: Delete Vehicle
+if st.session_state.get("logged_in"):
 st.subheader("🗑️ Delete Vehicle")
 
 with st.expander("🗑️ Remove Vehicle", expanded=True):
