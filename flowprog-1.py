@@ -279,3 +279,30 @@ with st.expander("🔄 Bulk Update Status", expanded=True):
             save_data(df)
             st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
             st.rerun()
+
+# Section: Clear "In Progress" Status
+st.subheader("🛠 Clear 'In Progress' Status")
+
+# Select VIN to clear 'In Progress'
+vin_to_clear = st.selectbox("Select VIN to clear 'In Progress'", df["VIN"].unique())
+
+if vin_to_clear:
+    if st.button(f"Clear 'In Progress' for VIN {vin_to_clear}"):
+        # Find the row corresponding to the VIN
+        idx = df[df["VIN"] == vin_to_clear].index[0]
+        
+        # List of columns for each production line with "In Progress" status
+        production_lines = ["Audit", "Delivery"]  # Add more production lines if needed
+        
+        # Loop through production lines and clear "In Progress" status
+        for line in production_lines:
+            if df.at[idx, line] == "In Progress":
+                # Clear the "In Progress" status and reset the timestamp
+                df.at[idx, line] = ""
+                df.at[idx, f"{line}_time"] = None
+        
+        # Save the updated DataFrame to Google Sheets
+        save_data(df)
+        
+        st.success(f"✅ 'In Progress' status cleared for VIN {vin_to_clear}!")
+        st.experimental_rerun()  # Refresh the app to reflect the changes
