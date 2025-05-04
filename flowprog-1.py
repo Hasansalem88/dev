@@ -245,7 +245,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
                 st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
                 st.rerun()
 else:
-    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
+    st.info("🔒Add Vin Admin Only.")
 
 # Section: Delete Vehicle
 if st.session_state.get("logged_in"):
@@ -261,7 +261,7 @@ if st.session_state.get("logged_in"):
                 st.success(f"✅ Vehicle {vin_to_delete} has been deleted.")
                 st.rerun()
 else:
-    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
+    st.info("🔒 Update Status Admin Only.")
     
 # Section: Bulk Update Status
 if st.session_state.get("logged_in"):
@@ -296,4 +296,4 @@ if st.session_state.get("logged_in"):
                 st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
                 st.rerun()
 else:
-    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
+    st.info("🔒 Delet Vin Admin Only.")
