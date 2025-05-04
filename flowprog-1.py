@@ -1,27 +1,27 @@
-# Full updated Streamlit app with fixed tabs and wider Excel cells
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import plotly.express as px
 import gspread
 from google.oauth2 import service_account
-from io import BytesIO
 import xlsxwriter
+from io import BytesIO
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Assembly Line Tracker")
-st.title(":blue_car: Vehicle Production Flow Dashboard")
+st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Access credentials from secrets
+# Access the credentials from Streamlit secrets
 secrets = dict(st.secrets["gcp_service_account"])
 secrets["private_key"] = secrets["private_key"].replace("\\n", "\n")
 
+# Define the required Google Sheets scopes
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
 
+# Apply scopes when creating the credentials
 creds = service_account.Credentials.from_service_account_info(secrets, scopes=SCOPES)
 
 # Authenticate Google Sheets
@@ -32,6 +32,7 @@ except Exception as e:
     st.error(f"❌ Error opening Google Sheet: {e}")
     st.stop()
 
+# Constants
 PRODUCTION_LINES = [
     "Body Shop", "Paint", "TRIM", "UB", "FINAL",
     "Odyssi", "Wheel Alignment", "ADAS", "PQG",
@@ -44,6 +45,7 @@ STATUS_COLORS = {
     "Repair Needed": "#FF0000",
 }
 
+# Load or initialize data
 def load_data():
     records = sheet.get_all_records()
     if not records:
@@ -56,6 +58,7 @@ def load_data():
         return empty_df
     return pd.DataFrame(records)
 
+# Save data to Google Sheets
 def save_data(df):
     df_copy = df.copy()
     for col in df_copy.columns:
@@ -70,6 +73,7 @@ def save_data(df):
     except Exception as e:
         st.error(f"❌ Failed to save data to Google Sheet: {e}")
 
+# Load data
 try:
     df = load_data()
 except Exception as e:
@@ -79,10 +83,10 @@ except Exception as e:
 # Sidebar Navigation
 st.sidebar.title("📂 Report Menu")
 report_option = st.sidebar.radio("Select Report Section", [
+    "Vehicle Details",
     "Dashboard Summary",
     "Production Trend",
     "Line Progress",
-    "Vehicle Details",
     "Add/Update Vehicle"
 ])
 
@@ -95,111 +99,109 @@ with st.sidebar:
         selected_status = "All"
         selected_line = "All"
 
+# Apply filters
 filtered_df = df.copy()
-if selected_status != "All":
-    if selected_status == "Completed":
-        filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-    else:
-        filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
-if selected_line != "All":
-    filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
+if "VIN" in filtered_df.columns:
+    if selected_status != "All":
+        if selected_status == "Completed":
+            filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+        else:
+            filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
+    if selected_line != "All":
+        filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
 
-if report_option == "Dashboard Summary":
-    st.subheader("📅 Daily Production Summary")
-    col1, col2, col3 = st.columns(3)
-    df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
-    df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
-    today = pd.Timestamp.now().normalize()
-    vehicles_today = df[df["Start Time"].dt.normalize() == today]
-    completed_today = df[(df["Last Updated"].dt.normalize() == today) & (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
-    in_progress = df[df["Current Line"] != "Delivery"]
-    col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
-    col2.metric("✅ Completed Today", len(completed_today))
-    col3.metric("🔄 Still In Progress", len(in_progress))
+    st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
+else:
+    st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
 
-elif report_option == "Production Trend":
-    st.subheader("📈 Daily Completions Trend")
-    trend_df = df.copy()
-    trend_df["Last Updated"] = pd.to_datetime(trend_df["Last Updated"], errors="coerce")
-    trend_df = trend_df[trend_df["Last Updated"].notna() & trend_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-    trend_df["Completed Date"] = trend_df["Last Updated"].dt.date
-    trend = trend_df.groupby("Completed Date").size().reset_index(name="Completed Count")
-    if not trend.empty:
-        st.line_chart(trend.set_index("Completed Date"))
-    else:
-        st.info("ℹ️ No completed vehicles yet to display in trend.")
-
-elif report_option == "Line Progress":
-    st.subheader("🏭 Line Progress Tracker")
-    line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
-    line_counts.columns = ["Production Line", "Vehicle Count"]
-    fig_progress = px.bar(line_counts, x="Production Line", y="Vehicle Count", text="Vehicle Count")
-    fig_progress.update_traces(textposition="outside")
-    st.plotly_chart(fig_progress, use_container_width=True)
-
-elif report_option == "Vehicle Details":
+# Section: Vehicle Details
+if report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
+
+    # Filter out the 'Start Time' and '*_time' columns before displaying
     columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
+    # Apply color styling based on status for individual cells
     def color_cells(val):
+        # Status colors mapping
         status_colors = {
-            "Completed": "background-color: #d4edda",
-            "In Progress": "background-color: #fff3cd",
-            "Repair Needed": "background-color: #f8d7da"
+            "Completed": "background-color: #d4edda",      # Light green
+            "In Progress": "background-color: #fff3cd",     # Light yellow/orange
+            "Repair Needed": "background-color: #f8d7da"    # Light red
         }
-        return status_colors.get(val, "")
+        
+        # Apply the correct background color for the specific cell based on its value
+        if val in ["Completed", "In Progress", "Repair Needed"]:
+            return status_colors.get(val, "")
+        return ""
 
+    # Generate a list of color styles for each cell based on its value
     def apply_style_to_df(df):
         styles = pd.DataFrame("", index=df.index, columns=df.columns)
+
         for i, row in df.iterrows():
             for col in df.columns:
                 styles.at[i, col] = color_cells(row[col])
+
         return styles
 
+    # Apply styles and filter the dataframe to only show necessary columns
     styled_df = df[columns_to_display]
     styles = apply_style_to_df(styled_df)
+
+    # Display the dataframe with the styles
     st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
 
-    # Download button for XLSX with formatting
-    output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    styled_df.to_excel(writer, index=False, sheet_name='Vehicle Details')
-    workbook = writer.book
-    worksheet = writer.sheets['Vehicle Details']
-    
-    for idx, col in enumerate(styled_df.columns):
-        max_width = max(styled_df[col].astype(str).map(len).max(), len(col)) + 2
-        worksheet.set_column(idx, idx, max_width)
+# Section: Dashboard Summary
+elif report_option == "Dashboard Summary":
+    with st.container():
+        st.subheader("📅 Daily Production Summary")
+        col1, col2, col3 = st.columns(3)
+        df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
+        df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
+        today = pd.Timestamp.now().normalize()
+        vehicles_today = df[df["Start Time"].dt.normalize() == today]
+        completed_today = df[(df["Last Updated"].dt.normalize() == today) & (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
+        in_progress = df[df["Current Line"] != "Delivery"]
+        col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
+        col2.metric("✅ Completed Today", len(completed_today))
+        col3.metric("🔄 Still In Progress", len(in_progress))
 
-    format_green = workbook.add_format({'bg_color': '#d4edda'})
-    format_yellow = workbook.add_format({'bg_color': '#fff3cd'})
-    format_red = workbook.add_format({'bg_color': '#f8d7da'})
+# Section: Production Trend
+elif report_option == "Production Trend":
+    with st.container():
+        st.subheader("📈 Daily Completions Trend")
+        daily_counts = df[df["Last Updated"].notna()].copy()
+        daily_counts["Last Updated"] = pd.to_datetime(daily_counts["Last Updated"], errors="coerce")
+        daily_counts = daily_counts[daily_counts["Last Updated"].notna()]
+        daily_counts = daily_counts[daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+        daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
+        trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
+        if not trend.empty:
+            st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
+        else:
+            st.info("ℹ️ No completed vehicles yet to display in trend.")
 
-    for row_idx, row in styled_df.iterrows():
-        for col_idx, val in enumerate(row):
-            fmt = None
-            if val == "Completed":
-                fmt = format_green
-            elif val == "In Progress":
-                fmt = format_yellow
-            elif val == "Repair Needed":
-                fmt = format_red
-            if fmt:
-                worksheet.write(row_idx + 1, col_idx, val, fmt)
+# Section: Line Progress
+elif report_option == "Line Progress":
+    with st.container():
+        st.subheader("🏭 Line Progress Tracker")
+        line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
+        line_counts.columns = ["Production Line", "Vehicle Count"]
+        fig_progress = px.bar(
+            line_counts,
+            x="Production Line",
+            y="Vehicle Count",
+            title="Vehicles Currently at Each Production Line",
+            text="Vehicle Count"
+        )
+        fig_progress.update_traces(textposition="outside")
+        fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
+        st.plotly_chart(fig_progress, use_container_width=True)
 
-    writer.close()
-    output.seek(0)
-
-    st.download_button(
-        label="📥 Download XLSX with Formatting",
-        data=output,
-        file_name="Vehicle_Details.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
+# Section 4: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
-    st.subheader("✏️ Add or Update Vehicle")
-    with st.expander("Add New Vehicle", expanded=True):
+    with st.expander("✏️ Add New Vehicle", expanded=True):
         new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
         new_model = st.selectbox("Model", ["C43"])
         new_start_time = st.date_input("Start Date", datetime.now().date())
@@ -224,8 +226,8 @@ elif report_option == "Add/Update Vehicle":
                 st.success(f"✅ {new_vin} added successfully!")
                 st.rerun()
 
-    with st.expander("Update Vehicle Status"):
-        if not df.empty:
+    with st.expander("✏️ Update Vehicle Status"):
+        if not df.empty and "VIN" in df.columns:
             update_vin = st.selectbox("VIN to Update", df["VIN"])
             current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
             update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
