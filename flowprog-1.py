@@ -217,14 +217,18 @@ with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
         st.success(f"✅ Updated {len(selected_vins)} vehicles successfully!")
         st.rerun()
 
-with st.expander("🗑️ Delete Vehicle", expanded=False):
-    if not df.empty and "VIN" in df.columns:
-        df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()
-        delete_vin = st.selectbox("Select VIN to delete", df["VIN"].unique())
-
-        if st.button("Delete Vehicle"):
-            df = df[df["VIN"] != delete_vin]
-            save_data(df)
-            st.success(f"🗑️ VIN {delete_vin} has been deleted.")
-            st.rerun()
+with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
+    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
+    selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
+    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    
+    if st.button("Bulk Update"):
+        for vin in selected_vins:
+            idx = df[df["VIN"] == vin].index[0]
+            df.at[idx, selected_line] = new_status
+            df.at[idx, f"{selected_line}_time"] = datetime.now()
+            df.at[idx, "Last Updated"] = datetime.now()
+        save_data(df)
+        st.success(f"✅ Updated {len(selected_vins)} vehicles successfully!")
+        st.rerun()
 
