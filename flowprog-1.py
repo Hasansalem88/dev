@@ -74,6 +74,78 @@ except Exception as e:
     st.error(f"❌ Failed to load data from Google Sheet: {e}")
     st.stop()
 
+# Helper function to get the next line in production
+def get_next_line(current_line):
+    try:
+        current_index = PRODUCTION_LINES.index(current_line)
+        if current_index + 1 < len(PRODUCTION_LINES):
+            return PRODUCTION_LINES[current_index + 1]
+        return None  # If it's the last line, no next line
+    except ValueError:
+        return None
+
+# Page setup
+st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
+st.title("🚗 Vehicle Production Flow Dashboard")
+
+# Access credentials from Streamlit secrets
+secrets = dict(st.secrets["gcp_service_account"])
+secrets["private_key"] = secrets["private_key"].replace("\\n", "\n")
+
+# Define Google Sheets scopes
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+# Create credentials
+creds = service_account.Credentials.from_service_account_info(secrets, scopes=SCOPES)
+
+# Authenticate Google Sheets
+try:
+    client = gspread.authorize(creds)
+    sheet = client.open("VehicleDashboardtest").sheet1
+except Exception as e:
+    st.error(f"❌ Error opening Google Sheet: {e}")
+    st.stop()
+
+# Constants
+PRODUCTION_LINES = [
+    "Body Shop", "Paint", "TRIM", "UB", "FINAL",
+    "Odyssi", "Wheel Alignment", "ADAS", "PQG",
+    "Tests Track", "CC4", "DVX", "Audit", "Delivery"
+]
+
+# Load or initialize data
+def load_data():
+    records = sheet.get_all_records()
+    if not records:
+        columns = ["VIN", "Model", "Current Line", "Start Time", "Last Updated"]
+        for line in PRODUCTION_LINES:
+            columns.append(line)
+            columns.append(f"{line}_time")
+        empty_df = pd.DataFrame(columns=columns)
+        sheet.update([list(empty_df.columns)] + [[]])
+        return empty_df
+    return pd.DataFrame(records)
+
+# Save data to Google Sheets
+def save_data(df):
+    df_copy = df.copy()
+    for col in df_copy.columns:
+        df_copy[col] = df_copy[col].apply(lambda x:
+            x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
+            else "" if pd.isnull(x) or x == pd.NaT
+            else str(x)
+        )
+    try:
+        sheet.clear()
+        sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
+    except Exception as e:
+        st.error(f"❌ Failed to save data to Google Sheet: {e}")
+
+# Continue the rest of your code here...
+
 # Sidebar Filters
 st.sidebar.header("🔍 Filters")
 selected_status = st.sidebar.selectbox("Current Line Status", ["All"] + ["In Progress", "Completed", "Repair Needed"])
@@ -187,20 +259,39 @@ with st.expander("➕ Add New Vehicle", expanded=True):
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
         update_vin = st.selectbox("Select VIN", df["VIN"])
-if update_vin:
-    current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
-    st.markdown(f"**🔄 Current Line:** `{current_line}`")
-    update_line = current_line  # استخدامه تلقائيًا بدون اختيار
-    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
-    
-    if st.button("Update Status"):
-            idx = df[df["VIN"] == update_vin].index[0]
-            df.at[idx, update_line] = new_status
-            df.at[idx, f"{update_line}_time"] = datetime.now()
-            df.at[idx, "Last Updated"] = datetime.now()
-            save_data(df)
-            st.success("✅ Status updated successfully!")
-            st.rerun()
+        current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
+        update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
+        new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+        
+        if st.button("Update Status"):
+            # Check if the new status is "Completed"
+            if new_status == "Completed":
+                # Move the vehicle to the next line with "In Progress" status
+                next_line = get_next_line(current_line)
+                if next_line:
+                    idx = df[df["VIN"] == update_vin].index[0]
+                    df.at[idx, update_line] = "Completed"
+                    df.at[idx, f"{update_line}_time"] = datetime.now()
+                    df.at[idx, "Last Updated"] = datetime.now()
+
+                    # Set the next line to "In Progress"
+                    df.at[idx, "Current Line"] = next_line
+                    df.at[idx, next_line] = "In Progress"
+                    df.at[idx, f"{next_line}_time"] = datetime.now()
+                    save_data(df)
+                    st.success(f"✅ {update_vin} moved to {next_line} with 'In Progress' status!")
+                    st.rerun()
+                else:
+                    st.error("❌ This is the last production line, no next line available.")
+            else:
+                # If not completed, just update the selected line
+                idx = df[df["VIN"] == update_vin].index[0]
+                df.at[idx, update_line] = new_status
+                df.at[idx, f"{update_line}_time"] = datetime.now()
+                df.at[idx, "Last Updated"] = datetime.now()
+                save_data(df)
+                st.success("✅ Status updated successfully!")
+                st.rerun()
 
 with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
     selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique(), key="bulk_vins_select")
