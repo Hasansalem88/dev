@@ -140,43 +140,40 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Submit Button inside the form
         submit = st.form_submit_button("Add Vehicle")
 
-        # Check for submission and process only if valid
-        if submit:
-            # Reload data fresh to check for duplicate VINs
-            df = load_data()  # Always reload the fresh data
-            existing_vins = df["VIN"].dropna().astype(str).str.strip().str.upper().tolist()
+    # Proceed only when the submit button is clicked
+    if submit:
+        # Reload the data fresh to check for duplicate VINs
+        df = load_data()  # Always reload fresh data from the sheet
+        existing_vins = df["VIN"].dropna().astype(str).str.strip().str.upper().tolist()
 
-            # Debugging outputs (optional for understanding what's going on)
-            st.write("🔍 Trying to add VIN:", new_vin)
-            st.write("✅ Existing VINs in Sheet:", existing_vins)
+        # Check if the VIN is already in the list (case-insensitive check)
+        if len(new_vin) != 5:
+            st.error("❌ VIN must be exactly 5 characters.")
+        elif new_vin in existing_vins:
+            # If duplicate VIN is found, display an error
+            st.error(f"❌ VIN '{new_vin}' already exists. Please use a unique VIN.")
+        else:
+            # Proceed only if the VIN is unique and valid
+            vehicle = {
+                "VIN": new_vin,
+                "Model": new_model,
+                "Current Line": "Body Shop",
+                "Start Time": datetime.combine(new_start_time, datetime.min.time()),
+                "Last Updated": datetime.now(),
+            }
 
-            # Check VIN length and duplicate existence before adding it
-            if len(new_vin) != 5:
-                st.error("❌ VIN must be exactly 5 characters.")
-            elif new_vin in existing_vins:
-                st.error(f"❌ VIN '{new_vin}' already exists. Please use a unique VIN.")
-            else:
-                # Proceed only if VIN is unique and valid
-                vehicle = {
-                    "VIN": new_vin,
-                    "Model": new_model,
-                    "Current Line": "Body Shop",
-                    "Start Time": datetime.combine(new_start_time, datetime.min.time()),
-                    "Last Updated": datetime.now(),
-                }
+            # Add all production lines with initial statuses
+            for line in PRODUCTION_LINES:
+                vehicle[line] = "In Progress" if line == "Body Shop" else ""
+                vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
 
-                # Add all production lines with initial statuses
-                for line in PRODUCTION_LINES:
-                    vehicle[line] = "In Progress" if line == "Body Shop" else ""
-                    vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+            # Append to DataFrame
+            df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
 
-                # Append to DataFrame
-                df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-
-                # Save to Google Sheets
-                save_data(df)
-                st.success(f"✅ VIN '{new_vin}' added successfully!")
-                st.rerun()  # Re-run the app to show the updated data
+            # Save the updated DataFrame to Google Sheets
+            save_data(df)
+            st.success(f"✅ VIN '{new_vin}' added successfully!")
+            st.rerun()  # Re-run the app to show the updated data
 
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
