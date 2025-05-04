@@ -157,7 +157,7 @@ if report_option == "Vehicle Details":
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             worksheet = writer.sheets['Vehicle Details']
             
-            # Apply column widths and formatting
+            # Apply column widths and formatting after writing the data
             adjust_column_widths(worksheet, df)
             
             # Apply formatting after writing the data
