@@ -152,7 +152,7 @@ if report_option == "Vehicle Details":
     def export_to_excel(df):
         output = BytesIO()
         
-        # Create a new Excel file
+        # Create a new Excel file with xlsxwriter engine
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             worksheet = writer.sheets['Vehicle Details']
