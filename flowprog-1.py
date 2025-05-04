@@ -50,7 +50,11 @@ def load_data():
             empty_df = pd.DataFrame(columns=columns)
             sheet.update([list(empty_df.columns)] + [[]])
             return empty_df
-        return pd.DataFrame(records)
+        
+        df = pd.DataFrame(records)
+        # Ensure VIN column is treated as string
+        df['VIN'] = df['VIN'].astype(str).str.strip().str.upper()
+        return df
     except Exception as e:
         st.error(f"❌ Failed to load data from Google Sheet: {e}")
         st.stop()
@@ -125,13 +129,13 @@ filtered_df = df.copy()
 if selected_status != "All":
     if selected_status == "Completed":
         filtered_df = filtered_df[filtered_df.apply(
-            lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+            lambda row: all(str(row.get(line, '')).upper() == "COMPLETED" for line in PRODUCTION_LINES), axis=1)]
     else:
         filtered_df = filtered_df[filtered_df.apply(
-            lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
+            lambda row: str(row.get(row["Current Line"], '')).upper() == selected_status.upper(), axis=1)]
 
 if selected_line != "All":
-    filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
+    filtered_df = filtered_df[filtered_df["Current Line"].str.upper() == selected_line.upper()]
 
 st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
 
@@ -165,7 +169,7 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             vin_error = f"VIN must be exactly {VALID_VIN_LENGTH} characters"
         elif not new_vin.isalnum():
             vin_error = "VIN must contain only letters and numbers"
-        elif df["VIN"].str.upper().eq(new_vin).any():
+        elif new_vin in df['VIN'].values:
             vin_error = "This VIN already exists"
     
     if vin_error:
