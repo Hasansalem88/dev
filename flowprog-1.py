@@ -5,9 +5,6 @@ import gspread
 from google.oauth2 import service_account
 from io import BytesIO
 
-# First, set the page config (it must be the first Streamlit command)
-st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
-
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
