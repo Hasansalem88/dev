@@ -289,20 +289,33 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
                 st.success("✅ Status updated successfully!")
                 st.rerun()
 
-with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
-    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique(), key="bulk_vins_select")
-    selected_line = st.selectbox("Production Line", PRODUCTION_LINES, key="bulk_line")
-    bulk_new_status = st.selectbox("New Status (Bulk)", ["Completed", "In Progress", "Repair Needed"], key="bulk_status")
-    
-    if st.button("Bulk Update", key="bulk_update_btn"):
+# Section: Bulk Update Vehicle Status
+st.subheader("🔄 Bulk Update Vehicle Status")
+
+# Select VINs for bulk update
+selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
+
+if selected_vins:
+    # Select Production Line and Status
+    selected_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
+
+    if st.button("Update Selected VINs"):
+        # Loop through selected VINs and update their status
         for vin in selected_vins:
+            # Find the row corresponding to the VIN
             idx = df[df["VIN"] == vin].index[0]
-            df.at[idx, selected_line] = bulk_new_status
+            
+            # Update the status and timestamp for the selected line
+            df.at[idx, selected_line] = selected_status
             df.at[idx, f"{selected_line}_time"] = datetime.now()
             df.at[idx, "Last Updated"] = datetime.now()
+        
+        # Save the updated DataFrame to Google Sheets
         save_data(df)
-        st.success(f"✅ Updated {len(selected_vins)} vehicles successfully!")
-        st.rerun()
+        
+        st.success("✅ Selected VINs status updated successfully!")
+        st.experimental_rerun()  # Refresh the app to reflect the changes
 
 with st.expander("🗑️ Delete Vehicle", expanded=False):
     if not df.empty and "VIN" in df.columns:
