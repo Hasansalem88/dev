@@ -202,27 +202,24 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
         new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
         
         if st.button("Update Status"):
-            # Check if the new status is "Completed"
+            # Update status and move to next line if completed
+            idx = df[df["VIN"] == update_vin].index[0]
             if new_status == "Completed":
-                # Move the vehicle to the next line with "In Progress" status
                 next_line = get_next_line(current_line)
                 if next_line:
-                    idx = df[df["VIN"] == update_vin].index[0]
                     df.at[idx, update_line] = new_status
                     df.at[idx, f"{update_line}_time"] = datetime.now()
                     df.at[idx, "Current Line"] = next_line
-                    df.at[idx, f"{next_line}_time"] = datetime.now()  # Start the timer for the next line
-                    save_data(df)
-                    st.success(f"✅ {update_vin} status updated to {new_status} and moved to {next_line}.")
+                    df.at[idx, f"{next_line}_time"] = datetime.now()
                 else:
                     st.error(f"❌ This vehicle has already reached the final line!")
             else:
-                idx = df[df["VIN"] == update_vin].index[0]
                 df.at[idx, update_line] = new_status
                 df.at[idx, f"{update_line}_time"] = datetime.now()
-                df.at[idx, "Last Updated"] = datetime.now()
-                save_data(df)
-                st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
+
+            df.at[idx, "Last Updated"] = datetime.now()
+            save_data(df)
+            st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
             st.rerun()
 
 # Section: Delete Vehicle
