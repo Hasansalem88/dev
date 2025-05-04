@@ -1,9 +1,15 @@
+# First, set the page config (it must be the first Streamlit command)
+st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
+
+# Now proceed with the rest of the script
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2 import service_account
 from io import BytesIO
+
+# Your other code continues here...
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
