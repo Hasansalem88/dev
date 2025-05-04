@@ -157,6 +157,9 @@ with st.expander("➕ Add New Vehicle", expanded=True):
     new_start_time = st.date_input("Start Date", datetime.now().date())
     
     if st.button("Add Vehicle"):
+        # Reload the DataFrame to ensure it's the latest
+        df = load_data()
+
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
         elif new_vin in df["VIN"].values:
@@ -172,8 +175,13 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             for line in PRODUCTION_LINES:
                 vehicle[line] = "In Progress" if line == "Body Shop" else ""
                 vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+            
+            # Add the new vehicle to the DataFrame
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
+            
+            # Save the updated DataFrame back to Google Sheets
             save_data(df)
+            
             st.success(f"✅ {new_vin} added successfully!")
             st.rerun()
 
