@@ -48,7 +48,9 @@ def load_data():
         empty_df = pd.DataFrame(columns=columns)
         sheet.update([list(empty_df.columns)] + [[]])
         return empty_df
-    return pd.DataFrame(records)
+    df = pd.DataFrame(records)
+    df["VIN"] = df["VIN"].astype(str)  # Ensure VIN column is treated as a string
+    return df
 
 # Save data to Google Sheets
 def save_data(df):
