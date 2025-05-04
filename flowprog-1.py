@@ -175,6 +175,9 @@ elif report_option == "Vehicle Details":
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         filtered_df[columns_to_display].to_excel(writer, index=False, sheet_name='Vehicles')
+        for i, col in enumerate(styled_df.columns):
+    max_len = max(styled_df[col].astype(str).map(len).max(), len(col)) + 2
+    writer.sheets["Vehicle Details"].set_column(i, i, max_len)
     st.download_button(
         label="📅 Download Filtered Data as XLSX",
         data=output.getvalue(),
