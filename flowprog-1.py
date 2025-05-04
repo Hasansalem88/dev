@@ -9,20 +9,18 @@ from google.oauth2 import service_account
 st.set_page_config(layout="wide", page_title="🚗 Assembly Line Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Access the credentials from Streamlit secrets
+# Access credentials from secrets
 secrets = dict(st.secrets["gcp_service_account"])
 secrets["private_key"] = secrets["private_key"].replace("\\n", "\n")
 
-# Define the required Google Sheets scopes
+# Google Sheets credentials with scopes
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-
-# Apply scopes when creating the credentials
 creds = service_account.Credentials.from_service_account_info(secrets, scopes=SCOPES)
 
-# Authenticate Google Sheets
+# Connect to Google Sheet
 try:
     client = gspread.authorize(creds)
     sheet = client.open("VehicleDashboardtest").sheet1
@@ -43,7 +41,7 @@ STATUS_COLORS = {
     "Repair Needed": "#FF0000",
 }
 
-# Load or initialize data
+# Load data from Google Sheet
 def load_data():
     records = sheet.get_all_records()
     if not records:
@@ -51,17 +49,16 @@ def load_data():
         for line in PRODUCTION_LINES:
             columns.append(line)
             columns.append(f"{line}_time")
-        empty_df = pd.DataFrame(columns=columns)
-        sheet.update([list(empty_df.columns)] + [[]])
-        return empty_df
+        sheet.update([columns])
+        return pd.DataFrame(columns=columns)
     return pd.DataFrame(records)
 
-# Save data to Google Sheets
+# Save data to Google Sheet
 def save_data(df):
     df_copy = df.copy()
     for col in df_copy.columns:
-        df_copy[col] = df_copy[col].apply(lambda x: 
-            x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
+        df_copy[col] = df_copy[col].apply(
+            lambda x: x.isoformat() if isinstance(x, (datetime, pd.Timestamp)) and not pd.isnull(x)
             else "" if pd.isnull(x) or x == pd.NaT
             else str(x)
         )
@@ -69,16 +66,16 @@ def save_data(df):
         sheet.clear()
         sheet.update([list(df_copy.columns)] + df_copy.values.tolist())
     except Exception as e:
-        st.error(f"❌ Failed to save data to Google Sheet: {e}")
+        st.error(f"❌ Failed to save data: {e}")
 
 # Load data
 try:
     df = load_data()
 except Exception as e:
-    st.error(f"❌ Failed to load data from Google Sheet: {e}")
+    st.error(f"❌ Failed to load data: {e}")
     st.stop()
 
-# Sidebar Navigation
+# Sidebar navigation
 st.sidebar.title("📂 Report Menu")
 report_option = st.sidebar.radio("Select Report Section", [
     "Vehicle Details",
@@ -88,116 +85,102 @@ report_option = st.sidebar.radio("Select Report Section", [
     "Add/Update Vehicle"
 ])
 
-# Sidebar Filters (VIN filter removed)
-with st.sidebar:
-    st.header("🔍 Filters")
-    selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
-    selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
-    if st.button("Reset Filters"):
-        selected_status = "All"
-        selected_line = "All"
+# Sidebar filters
+st.sidebar.header("🔍 Filters")
+selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
+selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
 
-# Apply filters (VIN filter logic removed)
+if st.sidebar.button("Reset Filters"):
+    selected_status = "All"
+    selected_line = "All"
+
+# Filter logic
 filtered_df = df.copy()
-if "VIN" in filtered_df.columns:
+if "VIN" in df.columns:
     if selected_status != "All":
         if selected_status == "Completed":
-            filtered_df = filtered_df[filtered_df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+            filtered_df = filtered_df[filtered_df.apply(
+                lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
         else:
-            filtered_df = filtered_df[filtered_df.apply(lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
+            filtered_df = filtered_df[filtered_df.apply(
+                lambda row: row.get(row["Current Line"], None) == selected_status, axis=1)]
     if selected_line != "All":
         filtered_df = filtered_df[filtered_df["Current Line"] == selected_line]
-
     st.sidebar.markdown(f"**Matching Vehicles:** {len(filtered_df)}")
 else:
     st.sidebar.error("❌ 'VIN' column not found in Google Sheet.")
 
-# Section: Dashboard Summary
+# Dashboard Summary
 if report_option == "Dashboard Summary":
-    with st.container():
-        st.subheader("📅 Daily Production Summary")
-        col1, col2, col3 = st.columns(3)
-        df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
-        df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
-        today = pd.Timestamp.now().normalize()
-        vehicles_today = df[df["Start Time"].dt.normalize() == today]
-        completed_today = df[(df["Last Updated"].dt.normalize() == today) & (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))]
-        in_progress = df[df["Current Line"] != "Delivery"]
-        col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
-        col2.metric("✅ Completed Today", len(completed_today))
-        col3.metric("🔄 Still In Progress", len(in_progress))
+    st.subheader("📅 Daily Production Summary")
+    col1, col2, col3 = st.columns(3)
+    df["Start Time"] = pd.to_datetime(df["Start Time"], errors="coerce")
+    df["Last Updated"] = pd.to_datetime(df["Last Updated"], errors="coerce")
+    today = pd.Timestamp.now().normalize()
+    vehicles_today = df[df["Start Time"].dt.normalize() == today]
+    completed_today = df[
+        (df["Last Updated"].dt.normalize() == today) &
+        (df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1))
+    ]
+    in_progress = df[df["Current Line"] != "Delivery"]
+    col1.metric("🆕 Vehicles Added Today", len(vehicles_today))
+    col2.metric("✅ Completed Today", len(completed_today))
+    col3.metric("🔄 Still In Progress", len(in_progress))
 
-# Section: Production Trend
+# Production Trend
 elif report_option == "Production Trend":
-    with st.container():
-        st.subheader("📈 Daily Completions Trend")
-        daily_counts = df[df["Last Updated"].notna()].copy()
-        daily_counts["Last Updated"] = pd.to_datetime(daily_counts["Last Updated"], errors="coerce")
-        daily_counts = daily_counts[daily_counts["Last Updated"].notna()]
-        daily_counts = daily_counts[daily_counts.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
-        daily_counts["Completed Date"] = daily_counts["Last Updated"].dt.date
-        trend = daily_counts.groupby("Completed Date").size().reset_index(name="Completed Count")
-        if not trend.empty:
-            st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
-        else:
-            st.info("ℹ️ No completed vehicles yet to display in trend.")
+    st.subheader("📈 Daily Completions Trend")
+    trend_df = df[df["Last Updated"].notna()].copy()
+    trend_df["Last Updated"] = pd.to_datetime(trend_df["Last Updated"], errors="coerce")
+    trend_df = trend_df[trend_df.apply(
+        lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
+    trend_df["Completed Date"] = trend_df["Last Updated"].dt.date
+    trend = trend_df.groupby("Completed Date").size().reset_index(name="Completed Count")
+    if not trend.empty:
+        st.line_chart(trend.rename(columns={"Completed Date": "index"}).set_index("index"))
+    else:
+        st.info("ℹ️ No completed vehicles yet to display in trend.")
 
-# Section: Line Progress
+# Line Progress
 elif report_option == "Line Progress":
-    with st.container():
-        st.subheader("🏭 Line Progress Tracker")
-        line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
-        line_counts.columns = ["Production Line", "Vehicle Count"]
-        fig_progress = px.bar(
-            line_counts,
-            x="Production Line",
-            y="Vehicle Count",
-            title="Vehicles Currently at Each Production Line",
-            text="Vehicle Count"
-        )
-        fig_progress.update_traces(textposition="outside")
-        fig_progress.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
-        st.plotly_chart(fig_progress, use_container_width=True)
+    st.subheader("🏭 Line Progress Tracker")
+    line_counts = df["Current Line"].value_counts().reindex(PRODUCTION_LINES, fill_value=0).reset_index()
+    line_counts.columns = ["Production Line", "Vehicle Count"]
+    fig = px.bar(
+        line_counts,
+        x="Production Line",
+        y="Vehicle Count",
+        text="Vehicle Count",
+        title="Vehicles Currently at Each Production Line"
+    )
+    fig.update_traces(textposition="outside")
+    fig.update_layout(xaxis_title="", yaxis_title="Vehicles", height=400)
+    st.plotly_chart(fig, use_container_width=True)
 
-# Section 4: Vehicle Details
+# Vehicle Details
 elif report_option == "Vehicle Details":
     st.subheader("🚘 All Vehicle Details")
 
-    # Filter out the 'Start Time' and '*_time' columns before displaying
-    columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
-
-    # Apply color styling based on status for individual cells
     def color_cells(val):
-        # Status colors mapping
-        status_colors = {
-            "Completed": "background-color: #d4edda",      # Light green
-            "In Progress": "background-color: #fff3cd",     # Light yellow/orange
-            "Repair Needed": "background-color: #f8d7da"    # Light red
-        }
-        
-        # Apply the correct background color for the specific cell based on its value
-        if val in ["Completed", "In Progress", "Repair Needed"]:
-            return status_colors.get(val, "")
-        return ""
+        return {
+            "Completed": "background-color: #d4edda",
+            "In Progress": "background-color: #fff3cd",
+            "Repair Needed": "background-color: #f8d7da"
+        }.get(val, "")
 
-    # Generate a list of color styles for each cell based on its value
-    def apply_style_to_df(df):
-        styles = pd.DataFrame("", index=df.index, columns=df.columns)
-
-        for i, row in df.iterrows():
-            for col in df.columns:
+    def apply_style_to_df(df_):
+        styles = pd.DataFrame("", index=df_.index, columns=df_.columns)
+        for i, row in df_.iterrows():
+            for col in df_.columns:
                 styles.at[i, col] = color_cells(row[col])
-
         return styles
 
-    # Apply styles and filter the dataframe to only show necessary columns
+    columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
     styled_df = df[columns_to_display]
     styles = apply_style_to_df(styled_df)
-
-    # Display the dataframe with the styles
     st.write(styled_df.style.apply(lambda x: styles.loc[x.name], axis=1))
 
-# Section: Add/Update Vehicle
+# Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
     with st.expander("✏️ Add New Vehicle", expanded=True):
         new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
