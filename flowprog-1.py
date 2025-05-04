@@ -162,17 +162,20 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Reload the DataFrame to ensure it's the latest
         df = load_data()
 
-        # Ensure VIN is treated correctly
-        new_vin = new_vin.strip().upper()  # Make sure we clean the input VIN
+        # Debug: Display the whole DataFrame temporarily to inspect data
+        st.write("Current DataFrame:", df)
 
-        # Debug prints for VIN comparison using st.write() instead of print()
-        st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display existing VINs
-        st.write("New VIN being added:", new_vin)  # Display the new VIN being added
+        # Ensure VIN is treated correctly
+        new_vin = new_vin.strip().upper()  # Clean the input VIN
+
+        # Display the list of existing VINs (case-insensitive comparison)
+        st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display all existing VINs
+        st.write("New VIN being added:", new_vin)  # Display the new VIN
 
         # Check if VIN length is valid
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].str.strip().str.upper().values:  # Strip and make sure case-insensitive check
+        elif new_vin in df["VIN"].str.strip().str.upper().values:  # Check case-insensitive and strip spaces
             st.error("❌ This VIN already exists.")
         else:
             vehicle = {
