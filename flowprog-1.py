@@ -84,10 +84,6 @@ def get_next_line(current_line):
     except ValueError:
         return None
 
-# Page setup
-st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
-st.title("🚗 Vehicle Production Flow Dashboard")
-
 # Access credentials from Streamlit secrets
 secrets = dict(st.secrets["gcp_service_account"])
 secrets["private_key"] = secrets["private_key"].replace("\\n", "\n")
