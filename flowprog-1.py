@@ -154,7 +154,7 @@ st.download_button(
 st.subheader("✏️ Add / Update Vehicle")
 
 with st.expander("➕ Add New Vehicle", expanded=True):
-    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
+    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()  # Ensure trimming and uppercasing
     new_model = st.selectbox("Model", ["C43"])
     new_start_time = st.date_input("Start Date", datetime.now().date())
     
@@ -162,9 +162,13 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Reload the DataFrame to ensure it's the latest
         df = load_data()
 
+        # Ensure VIN is treated correctly
+        new_vin = new_vin.strip().upper()  # Make sure we clean the input VIN
+
+        # Check if VIN length is valid
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].values:
+        elif new_vin in df["VIN"].str.strip().str.upper().values:  # Strip and make sure case-insensitive check
             st.error("❌ This VIN already exists.")
         else:
             vehicle = {
