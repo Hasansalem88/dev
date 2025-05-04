@@ -140,8 +140,7 @@ if report_option == "Vehicle Details":
     styles = apply_style_to_df(styled_df)
 
     # Adjust column width based on the max content length in each column
-    def adjust_column_widths(writer, df):
-        worksheet = writer.sheets['Vehicle Details']
+    def adjust_column_widths(worksheet, df):
         for i, col in enumerate(df.columns):
             max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2  # +2 for some padding
             worksheet.set_column(i, i, max_length)
@@ -156,10 +155,10 @@ if report_option == "Vehicle Details":
         # Create a new Excel file
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
-            adjust_column_widths(writer, df)  # Adjust column widths
-
-            # Get the worksheet after writing the data
             worksheet = writer.sheets['Vehicle Details']
+            
+            # Adjust column widths
+            adjust_column_widths(worksheet, df)
             
             # Apply formatting after writing the data
             cell_format = worksheet.add_format({'text_wrap': True})  # Ensure format is applied after the sheet is created
