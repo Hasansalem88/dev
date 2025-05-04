@@ -165,9 +165,9 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Ensure VIN is treated correctly
         new_vin = new_vin.strip().upper()  # Make sure we clean the input VIN
 
-        # Debug prints for VIN comparison
-        print("Existing VINs:", df["VIN"].str.strip().str.upper().values)  # Print all existing VINs
-        print("New VIN:", new_vin)  # Print the new VIN being added
+        # Debug prints for VIN comparison using st.write() instead of print()
+        st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display existing VINs
+        st.write("New VIN being added:", new_vin)  # Display the new VIN being added
 
         # Check if VIN length is valid
         if len(new_vin) != 5:
