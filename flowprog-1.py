@@ -205,7 +205,7 @@ if update_vin:
 with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
     selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
     selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
-    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    bulk_new_status = st.selectbox("New Status (Bulk)", ["Completed", "In Progress", "Repair Needed"])
     
     if st.button("Bulk Update"):
         for vin in selected_vins:
