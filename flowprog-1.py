@@ -163,14 +163,12 @@ if report_option == "Vehicle Details":
             adjust_column_widths(writer, df)  # Adjust column widths
             worksheet = writer.sheets['Vehicle Details']
             
-            # Apply styling
+            # Apply formatting after writing the data
+            cell_format = worksheet.add_format({'text_wrap': True})  # Ensure format is applied after the sheet is created
             for i, row in df.iterrows():
                 for j, value in enumerate(row):
-                    cell_format = worksheet.add_format({'text_wrap': True})
-                    if isinstance(value, str) and value in STATUS_COLORS:
-                        worksheet.write(i + 1, j, value, cell_format)
-                    else:
-                        worksheet.write(i + 1, j, value, cell_format)
+                    # Write cell with text wrap formatting
+                    worksheet.write(i + 1, j, value, cell_format)
 
         output.seek(0)
         return output
