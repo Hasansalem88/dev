@@ -115,9 +115,29 @@ def export_to_excel(df):
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Vehicle Details')
         worksheet = writer.sheets['Vehicle Details']
+        
+        # Add format options
+        completed_format = writer.book.add_format({'bg_color': '#d4edda', 'font_color': '#155724'})  # Green
+        in_progress_format = writer.book.add_format({'bg_color': '#fff3cd', 'font_color': '#856404'})  # Yellow
+        repair_needed_format = writer.book.add_format({'bg_color': '#f8d7da', 'font_color': '#721c24'})  # Red
+        
+        # Loop through each row and apply the formatting based on the status
+        for row_idx, row in df.iterrows():
+            for col_idx, value in enumerate(row):
+                if value == "Completed":
+                    worksheet.write(row_idx + 1, col_idx, value, completed_format)
+                elif value == "In Progress":
+                    worksheet.write(row_idx + 1, col_idx, value, in_progress_format)
+                elif value == "Repair Needed":
+                    worksheet.write(row_idx + 1, col_idx, value, repair_needed_format)
+                else:
+                    worksheet.write(row_idx + 1, col_idx, value)
+        
+        # Adjust the column width based on the maximum length of the data
         for i, col in enumerate(df.columns):
             max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2
             worksheet.set_column(i, i, max_length)
+    
     output.seek(0)
     return output
 
