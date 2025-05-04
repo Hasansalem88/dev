@@ -115,9 +115,23 @@ def export_to_excel(df):
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Vehicle Details')
         worksheet = writer.sheets['Vehicle Details']
+
+        # Apply column width adjustments
         for i, col in enumerate(df.columns):
             max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2
             worksheet.set_column(i, i, max_length)
+
+        # Add background colors based on status
+        for col in PRODUCTION_LINES:
+            status_column = df[col]
+            for idx, status in enumerate(status_column):
+                if status == "Completed":
+                    worksheet.write(idx + 1, df.columns.get_loc(col), status, workbook.add_format({'bg_color': '#d4edda', 'color': '#155724'}))  # Green
+                elif status == "In Progress":
+                    worksheet.write(idx + 1, df.columns.get_loc(col), status, workbook.add_format({'bg_color': '#fff3cd', 'color': '#856404'}))  # Yellow
+                elif status == "Repair Needed":
+                    worksheet.write(idx + 1, df.columns.get_loc(col), status, workbook.add_format({'bg_color': '#f8d7da', 'color': '#721c24'}))  # Red
+
     output.seek(0)
     return output
 
