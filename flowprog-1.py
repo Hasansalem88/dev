@@ -211,6 +211,9 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
                     df.at[idx, f"{update_line}_time"] = datetime.now()
                     df.at[idx, "Current Line"] = next_line
                     df.at[idx, f"{next_line}_time"] = datetime.now()
+                    # Set next line's status to "In Progress"
+                    df.at[idx, next_line] = "In Progress"
+                    df.at[idx, f"{next_line}_time"] = datetime.now()
                 else:
                     st.error(f"❌ This vehicle has already reached the final line!")
             else:
@@ -255,6 +258,9 @@ with st.expander("🔄 Bulk Update Status", expanded=True):
                             df.at[idx, current_line] = bulk_new_status
                             df.at[idx, f"{current_line}_time"] = datetime.now()
                             df.at[idx, "Current Line"] = next_line
+                            df.at[idx, f"{next_line}_time"] = datetime.now()
+                            # Set next line's status to "In Progress"
+                            df.at[idx, next_line] = "In Progress"
                             df.at[idx, f"{next_line}_time"] = datetime.now()
                     else:
                         df.at[idx, current_line] = bulk_new_status
