@@ -178,8 +178,9 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# Section: Add / Update Vehicle
-if st.session_state.get("logged_in"):
+# أولاً تأكد من أن المستخدم مسجل دخوله
+if "logged_in" in st.session_state and st.session_state["logged_in"]:
+    # Section: Add / Update Vehicle
     st.subheader("✏️ Add / Update Vehicle")
 
     with st.expander("➕ Add New Vehicle", expanded=True):
