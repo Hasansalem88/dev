@@ -198,3 +198,15 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
             save_data(df)
             st.success("✅ Status updated successfully!")
             st.rerun()
+
+with st.expander("🗑️ Delete Vehicle", expanded=False):
+    if not df.empty and "VIN" in df.columns:
+        df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()
+        delete_vin = st.selectbox("Select VIN to delete", df["VIN"].unique())
+
+        if st.button("Delete Vehicle"):
+            df = df[df["VIN"] != delete_vin]
+            save_data(df)
+            st.success(f"🗑️ VIN {delete_vin} has been deleted.")
+            st.rerun()
+
