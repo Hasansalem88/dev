@@ -155,6 +155,7 @@ with st.expander("➕ Add New Vehicle", expanded=True):
     new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
     new_model = st.selectbox("Model", ["C43"])
     new_start_time = st.date_input("Start Date", datetime.now().date())
+    
     if st.button("Add Vehicle"):
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
