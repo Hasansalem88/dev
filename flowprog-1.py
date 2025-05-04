@@ -170,6 +170,21 @@ if report_option == "Vehicle Details":
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+# Section: Dashboard Summary
+elif report_option == "Dashboard Summary":
+    st.subheader("📊 Dashboard Summary")
+    st.write("This section will show the summary of the production flow, with key metrics for vehicle statuses.")
+
+# Section: Production Trend
+elif report_option == "Production Trend":
+    st.subheader("📈 Production Trend")
+    st.write("This section will show the trends of vehicle production over time.")
+
+# Section: Line Progress
+elif report_option == "Line Progress":
+    st.subheader("🔄 Line Progress")
+    st.write("This section will show the progress of vehicles on each production line.")
+
 # Section: Add/Update Vehicle
 elif report_option == "Add/Update Vehicle":
     with st.expander("✏️ Add New Vehicle", expanded=True):
