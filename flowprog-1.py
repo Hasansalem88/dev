@@ -192,7 +192,8 @@ if update_vin:
     st.markdown(f"**🔄 Current Line:** `{current_line}`")
     update_line = current_line  # استخدامه تلقائيًا بدون اختيار
     new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
-        if st.button("Update Status"):
+    
+    if st.button("Update Status"):
             idx = df[df["VIN"] == update_vin].index[0]
             df.at[idx, update_line] = new_status
             df.at[idx, f"{update_line}_time"] = datetime.now()
