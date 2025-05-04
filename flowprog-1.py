@@ -72,10 +72,10 @@ except Exception as e:
     st.error(f"❌ Failed to load data from Google Sheet: {e}")
     st.stop()
 
-# Filters
+# Sidebar Filters
 st.sidebar.header("🔍 Filters")
-selected_status = st.selectbox("Current Line Status", ["All"] + ["In Progress", "Completed", "Repair Needed"])
-selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
+selected_status = st.sidebar.selectbox("Current Line Status", ["All"] + ["In Progress", "Completed", "Repair Needed"])
+selected_line = st.sidebar.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
 if st.sidebar.button("Reset Filters"):
     selected_status = "All"
     selected_line = "All"
