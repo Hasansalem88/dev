@@ -165,16 +165,15 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Debug: Display the whole DataFrame temporarily to inspect data
         st.write("Current DataFrame:", df)
 
+        # Ensure we are correctly reading VINs from the DataFrame
+        st.write("Loaded VINs from DataFrame:", df["VIN"].values)  # Display all VINs loaded from the DataFrame
+
         # Clean and ensure consistent VIN format
         new_vin_clean = new_vin.strip().upper()  # Remove leading/trailing spaces and convert to uppercase
 
-        # Debug: Display existing VINs (case-insensitive check)
-        st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display all existing VINs
-        st.write("New VIN being added:", new_vin_clean)  # Display the new VIN
-
         # Normalize existing VINs: Clean and uppercase them
         existing_vins_clean = df["VIN"].str.strip().str.upper().values
-        
+
         # Debug: Check the cleaned existing VINs
         st.write("Cleaned Existing VINs:", existing_vins_clean)
 
