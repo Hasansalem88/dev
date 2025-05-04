@@ -187,8 +187,10 @@ with st.expander("➕ Add New Vehicle", expanded=True):
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
         update_vin = st.selectbox("Select VIN", df["VIN"])
-        current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
-        update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
+if update_vin:
+    current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
+    st.markdown(f"**🔄 Current Line:** `{current_line}`")
+    update_line = current_line  # استخدامه تلقائيًا بدون اختيار
         new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
         if st.button("Update Status"):
             idx = df[df["VIN"] == update_vin].index[0]
@@ -198,6 +200,21 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
             save_data(df)
             st.success("✅ Status updated successfully!")
             st.rerun()
+
+with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
+    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
+    selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
+    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    
+    if st.button("Bulk Update"):
+        for vin in selected_vins:
+            idx = df[df["VIN"] == vin].index[0]
+            df.at[idx, selected_line] = new_status
+            df.at[idx, f"{selected_line}_time"] = datetime.now()
+            df.at[idx, "Last Updated"] = datetime.now()
+        save_data(df)
+        st.success(f"✅ Updated {len(selected_vins)} vehicles successfully!")
+        st.rerun()
 
 with st.expander("🗑️ Delete Vehicle", expanded=False):
     if not df.empty and "VIN" in df.columns:
