@@ -132,30 +132,15 @@ st.download_button(
 st.subheader("✏️ Add / Update Vehicle")
 
 with st.expander("➕ Add New Vehicle", expanded=True):
-    # Create form for adding vehicle
-    with st.form("add_vehicle_form", clear_on_submit=False):
-        new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
-        new_model = st.selectbox("Model", ["C43"])
-        new_start_time = st.date_input("Start Date", datetime.now().date())
-        
-        # Submit button for the form
-        submit = st.form_submit_button("Add Vehicle")
-
-    # When submit button is clicked
-    if submit:
-        # Reload the data fresh to check for duplicate VINs
-        df = load_data()  # Reload data from Google Sheets to get latest data
-        
-        # Ensure the VIN field is clean (strip and uppercase for comparison)
-        new_vin = new_vin.strip().upper()
-
-        # Check if VIN already exists in the loaded data
+    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
+    new_model = st.selectbox("Model", ["C43"])
+    new_start_time = st.date_input("Start Date", datetime.now().date())
+    if st.button("Add Vehicle"):
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
         elif new_vin in df["VIN"].values:
-            st.error(f"❌ VIN '{new_vin}' already exists. Please use a unique VIN.")
+            st.error("❌ This VIN already exists.")
         else:
-            # If VIN is unique, proceed with adding the new vehicle
             vehicle = {
                 "VIN": new_vin,
                 "Model": new_model,
@@ -163,22 +148,13 @@ with st.expander("➕ Add New Vehicle", expanded=True):
                 "Start Time": datetime.combine(new_start_time, datetime.min.time()),
                 "Last Updated": datetime.now(),
             }
-
-            # Initialize the statuses for each production line
             for line in PRODUCTION_LINES:
                 vehicle[line] = "In Progress" if line == "Body Shop" else ""
                 vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
-
-            # Add the new vehicle entry to the DataFrame
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-
-            # Save the updated DataFrame back to Google Sheets
-            try:
-                save_data(df)  # Save the data back to Google Sheets
-                st.success(f"✅ VIN '{new_vin}' added successfully!")
-                st.rerun()  # Reload the page to reflect changes immediately
-            except Exception as e:
-                st.error(f"❌ Failed to save data to Google Sheets: {e}")
+            save_data(df)
+            st.success(f"✅ {new_vin} added successfully!")
+            st.rerun()
 
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
