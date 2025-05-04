@@ -191,7 +191,7 @@ if update_vin:
     current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
     st.markdown(f"**🔄 Current Line:** `{current_line}`")
     update_line = current_line  # استخدامه تلقائيًا بدون اختيار
-        new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
         if st.button("Update Status"):
             idx = df[df["VIN"] == update_vin].index[0]
             df.at[idx, update_line] = new_status
