@@ -139,9 +139,13 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         submitted = st.form_submit_button("Add Vehicle")
 
     if submitted:
-        # 🔄 Always reload latest data before checking for duplicates
+        # 🔄 Always reload data to check fresh VINs
         df = load_data()
         existing_vins = df["VIN"].dropna().astype(str).str.strip().str.upper().tolist()
+
+        # 🧪 DEBUGGING OUTPUT
+        st.write("🔍 Trying to add VIN:", new_vin)
+        st.write("✅ Existing VINs in Sheet:", existing_vins)
 
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
@@ -159,7 +163,13 @@ with st.expander("➕ Add New Vehicle", expanded=True):
                 vehicle[line] = "In Progress" if line == "Body Shop" else ""
                 vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
 
+            # Add to dataframe
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
+
+            # 🧪 DEBUG: Show what’s being saved
+            st.write("📝 Updated DataFrame to be saved:")
+            st.dataframe(df)
+
             save_data(df)
             st.success(f"✅ VIN '{new_vin}' added successfully!")
             st.rerun()
