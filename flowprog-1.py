@@ -245,7 +245,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
                 st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
                 st.rerun()
 else:
-    st.info("🔒Add Vin Admin Only.")
+    st.info("🔒Add Vin - Admin Only.")
 
 # Section: Delete Vehicle
 if st.session_state.get("logged_in"):
