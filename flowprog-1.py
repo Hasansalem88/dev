@@ -89,7 +89,7 @@ report_option = st.sidebar.radio("Select Report Section", [
     "Add/Update Vehicle"
 ])
 
-# Sidebar Filters (VIN filter removed)
+# Sidebar Filters
 with st.sidebar:
     st.header("🔍 Filters")
     selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
@@ -98,7 +98,7 @@ with st.sidebar:
         selected_status = "All"
         selected_line = "All"
 
-# Apply filters (VIN filter logic removed)
+# Apply filters
 filtered_df = df.copy()
 if "VIN" in filtered_df.columns:
     if selected_status != "All":
@@ -262,4 +262,3 @@ elif report_option == "Add/Update Vehicle":
                     save_data(df)
                     st.success("✅ Status updated successfully!")
                     st.rerun()
-
