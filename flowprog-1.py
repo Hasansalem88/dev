@@ -179,69 +179,72 @@ st.download_button(
 )
 
 # Section: Add / Update Vehicle
-st.subheader("✏️ Add / Update Vehicle")
+if st.session_state.get("logged_in"):
+    st.subheader("✏️ Add / Update Vehicle")
 
-with st.expander("➕ Add New Vehicle", expanded=True):
-    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
-    new_model = st.selectbox("Model", ["C43"])
-    new_start_time = st.date_input("Start Date", datetime.now().date())
+    with st.expander("➕ Add New Vehicle", expanded=True):
+        new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
+        new_model = st.selectbox("Model", ["C43"])
+        new_start_time = st.date_input("Start Date", datetime.now().date())
 
-    # Reload the full DataFrame and fix VIN formatting
-    df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()  # Always format VINs to 5-character padded strings
+        # Reload the full DataFrame and fix VIN formatting
+        df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()  # Always format VINs to 5-character padded strings
 
-    if st.button("Add Vehicle"):
-        new_vin_clean = new_vin.zfill(5).upper()  # Pad and uppercase to match stored format
+        if st.button("Add Vehicle"):
+            new_vin_clean = new_vin.zfill(5).upper()  # Pad and uppercase to match stored format
 
-        if len(new_vin_clean) != 5:
-            st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin_clean in df["VIN"].values:
-            st.error("❌ This VIN already exists.")
-        else:
-            vehicle = {
-                "VIN": new_vin_clean,
-                "Model": new_model,
-                "Current Line": "Body Shop",
-                "Start Time": datetime.combine(new_start_time, datetime.min.time()),
-                "Last Updated": datetime.now(),
-            }
-            for line in PRODUCTION_LINES:
-                vehicle[line] = "In Progress" if line == "Body Shop" else ""
-                vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
-            df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-            save_data(df)
-            st.success(f"✅ {new_vin_clean} added successfully!")
-            st.rerun()
+            if len(new_vin_clean) != 5:
+                st.error("❌ VIN must be exactly 5 characters.")
+            elif new_vin_clean in df["VIN"].values:
+                st.error("❌ This VIN already exists.")
+            else:
+                vehicle = {
+                    "VIN": new_vin_clean,
+                    "Model": new_model,
+                    "Current Line": "Body Shop",
+                    "Start Time": datetime.combine(new_start_time, datetime.min.time()),
+                    "Last Updated": datetime.now(),
+                }
+                for line in PRODUCTION_LINES:
+                    vehicle[line] = "In Progress" if line == "Body Shop" else ""
+                    vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+                df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
+                save_data(df)
+                st.success(f"✅ {new_vin_clean} added successfully!")
+                st.rerun()
 
-with st.expander("🔄 Update Vehicle Status", expanded=True):
-    if not df.empty and "VIN" in df.columns:
-        update_vin = st.selectbox("Select VIN", df["VIN"])
-        current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
-        update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
-        new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
-        
-        if st.button("Update Status"):
-            # Update status and move to next line if completed
-            idx = df[df["VIN"] == update_vin].index[0]
-            if new_status == "Completed":
-                next_line = get_next_line(current_line)
-                if next_line:
+    with st.expander("🔄 Update Vehicle Status", expanded=True):
+        if not df.empty and "VIN" in df.columns:
+            update_vin = st.selectbox("Select VIN", df["VIN"])
+            current_line = df.loc[df["VIN"] == update_vin, "Current Line"].values[0]
+            update_line = st.selectbox("Production Line", PRODUCTION_LINES, index=PRODUCTION_LINES.index(current_line))
+            new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+
+            if st.button("Update Status"):
+                # Update status and move to next line if completed
+                idx = df[df["VIN"] == update_vin].index[0]
+                if new_status == "Completed":
+                    next_line = get_next_line(current_line)
+                    if next_line:
+                        df.at[idx, update_line] = new_status
+                        df.at[idx, f"{update_line}_time"] = datetime.now()
+                        df.at[idx, "Current Line"] = next_line
+                        df.at[idx, f"{next_line}_time"] = datetime.now()
+                        # Set next line's status to "In Progress"
+                        df.at[idx, next_line] = "In Progress"
+                        df.at[idx, f"{next_line}_time"] = datetime.now()
+                    else:
+                        st.error(f"❌ This vehicle has already reached the final line!")
+                else:
                     df.at[idx, update_line] = new_status
                     df.at[idx, f"{update_line}_time"] = datetime.now()
-                    df.at[idx, "Current Line"] = next_line
-                    df.at[idx, f"{next_line}_time"] = datetime.now()
-                    # Set next line's status to "In Progress"
-                    df.at[idx, next_line] = "In Progress"
-                    df.at[idx, f"{next_line}_time"] = datetime.now()
-                else:
-                    st.error(f"❌ This vehicle has already reached the final line!")
-            else:
-                df.at[idx, update_line] = new_status
-                df.at[idx, f"{update_line}_time"] = datetime.now()
 
-            df.at[idx, "Last Updated"] = datetime.now()
-            save_data(df)
-            st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
-            st.rerun()
+                df.at[idx, "Last Updated"] = datetime.now()
+                save_data(df)
+                st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
+                st.rerun()
+else:
+    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
 
 # Section: Delete Vehicle
 if st.session_state.get("logged_in"):
