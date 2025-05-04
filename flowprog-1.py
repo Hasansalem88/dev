@@ -154,37 +154,24 @@ st.download_button(
 st.subheader("✏️ Add / Update Vehicle")
 
 with st.expander("➕ Add New Vehicle", expanded=True):
-    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()  # Ensure trimming and uppercasing
+    new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
     new_model = st.selectbox("Model", ["C43"])
     new_start_time = st.date_input("Start Date", datetime.now().date())
-    
+
+    # Reload the full DataFrame and fix VIN formatting
+    df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()  # Always format VINs to 5-character padded strings
+
+    st.write("📋 Existing VINs (cleaned for check):")
+    st.dataframe(df["VIN"])  # This will display the list clearly
+
     if st.button("Add Vehicle"):
-        # Reload the DataFrame to ensure it's the latest
-        df = load_data()
+        new_vin_clean = new_vin.zfill(5).upper()  # Pad and uppercase to match stored format
 
-        # Debugging: Display the whole DataFrame temporarily to inspect data
-        st.write("Current DataFrame:", df)
-
-        # Debugging: Display the list of existing VINs
-        st.text_area("Loaded VINs from DataFrame (scrollable)", "\n".join(df["VIN"].values), height=200)
-
-        # Clean and ensure consistent VIN format (uppercase and stripped)
-        new_vin_clean = new_vin.strip().upper()  # Normalize the new VIN
-        st.write(f"New VIN entered: {new_vin_clean}")  # Debugging: show the new VIN entered
-
-        # Normalize existing VINs: Clean and uppercase them
-        existing_vins_clean = df["VIN"].str.strip().str.upper().values
-
-        # Debugging: Check the cleaned existing VINs
-        st.write("Cleaned Existing VINs:", existing_vins_clean)  # Debugging: show the cleaned VINs list
-
-        # Check if the new VIN already exists in the DataFrame (case-insensitive)
-        if new_vin_clean in existing_vins_clean:  # Compare the cleaned VINs
-            st.error("❌ This VIN already exists.")
-        elif len(new_vin_clean) != 5:
+        if len(new_vin_clean) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
+        elif new_vin_clean in df["VIN"].values:
+            st.error("❌ This VIN already exists.")
         else:
-            # Create the new vehicle record
             vehicle = {
                 "VIN": new_vin_clean,
                 "Model": new_model,
@@ -195,13 +182,8 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             for line in PRODUCTION_LINES:
                 vehicle[line] = "In Progress" if line == "Body Shop" else ""
                 vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
-            
-            # Add the new vehicle to the DataFrame
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-            
-            # Save the updated DataFrame back to Google Sheets
             save_data(df)
-            
             st.success(f"✅ {new_vin_clean} added successfully!")
             st.rerun()
 
