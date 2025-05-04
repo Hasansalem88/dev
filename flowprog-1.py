@@ -244,8 +244,7 @@ with st.expander("🔄 Update Vehicle Status", expanded=True):
             st.rerun()
 
 # Section: Delete Vehicle
-if st.session_state.get("logged_in"):
-    st.subheader("🗑️ Delete Vehicle")
+st.subheader("🗑️ Delete Vehicle")
 
 with st.expander("🗑️ Remove Vehicle", expanded=True):
     vin_to_delete = st.selectbox("Select VIN to Delete", df["VIN"])
@@ -256,8 +255,6 @@ with st.expander("🗑️ Remove Vehicle", expanded=True):
             save_data(df)
             st.success(f"✅ Vehicle {vin_to_delete} has been deleted.")
             st.rerun()
-else:
-    st.info("🔒 هذا القسم متاح فقط للمسؤولين.")
     
 # Section: Bulk Update Status
 if st.session_state.get("logged_in"):
