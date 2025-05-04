@@ -149,23 +149,26 @@ if st.button("Add Vehicle"):
     if st.button("Add Vehicle"):
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].values:
-            st.error("❌ This VIN already exists.")
-        else:
-            vehicle = {
-                "VIN": new_vin,
-                "Model": new_model,
-                "Current Line": "Body Shop",
-                "Start Time": datetime.combine(new_start_time, datetime.min.time()),
-                "Last Updated": datetime.now(),
-            }
-            for line in PRODUCTION_LINES:
-                vehicle[line] = "In Progress" if line == "Body Shop" else ""
-                vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
-            df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
-            save_data(df)
-            st.success(f"✅ {new_vin} added successfully!")
-            st.rerun()
+            elif new_vin in df["VIN"].values:
+        st.error("❌ This VIN already exists.")
+    else:
+        new_model = st.selectbox("Model", ["C43"])
+        new_start_time = st.date_input("Start Date", datetime.now().date())
+
+        vehicle = {
+            "VIN": new_vin,
+            "Model": new_model,
+            "Current Line": "Body Shop",
+            "Start Time": datetime.combine(new_start_time, datetime.min.time()),
+            "Last Updated": datetime.now(),
+        }
+        for line in PRODUCTION_LINES:
+            vehicle[line] = "In Progress" if line == "Body Shop" else ""
+            vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+        df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
+        save_data(df)
+        st.success(f"✅ {new_vin} added successfully!")
+        st.rerun()
 
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
