@@ -110,8 +110,22 @@ if report_option == "Vehicle Details":
     # Filter out the 'Start Time' and '*_time' columns before displaying
     columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
 
-    # Display the dataframe
-    st.write(filtered_df[columns_to_display])
+    # Apply styling based on status
+    def highlight_status(val):
+        color = ''
+        if val == "Completed":
+            color = 'background-color: #A9DFBF;'  # Green
+        elif val == "In Progress":
+            color = 'background-color: #F9E79F;'  # Yellow
+        elif val == "Repair Needed":
+            color = 'background-color: #F1948A;'  # Red
+        return color
+
+    # Apply styles to the dataframe
+    styled_df = filtered_df[columns_to_display].style.applymap(highlight_status)
+
+    # Display the styled dataframe
+    st.dataframe(styled_df)
 
     # Button to download as Excel
     def export_to_excel(df):
