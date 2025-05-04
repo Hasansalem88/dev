@@ -218,14 +218,14 @@ with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
         st.rerun()
 
 with st.expander("📦 Bulk Update Vehicle Status", expanded=False):
-    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique())
-    selected_line = st.selectbox("Production Line", PRODUCTION_LINES)
-    new_status = st.selectbox("New Status", ["Completed", "In Progress", "Repair Needed"])
+    selected_vins = st.multiselect("Select VINs to update", df["VIN"].unique(), key="bulk_vins_select")
+    selected_line = st.selectbox("Production Line", PRODUCTION_LINES, key="bulk_line")
+    bulk_new_status = st.selectbox("New Status (Bulk)", ["Completed", "In Progress", "Repair Needed"], key="bulk_status")
     
-    if st.button("Bulk Update"):
+    if st.button("Bulk Update", key="bulk_update_btn"):
         for vin in selected_vins:
             idx = df[df["VIN"] == vin].index[0]
-            df.at[idx, selected_line] = new_status
+            df.at[idx, selected_line] = bulk_new_status
             df.at[idx, f"{selected_line}_time"] = datetime.now()
             df.at[idx, "Last Updated"] = datetime.now()
         save_data(df)
