@@ -9,6 +9,24 @@ from io import BytesIO
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
+# --- Admin Login System ---
+users = {"admin": "admin123"}
+
+st.sidebar.title("🔐 Admin Login")
+username = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+login_btn = st.sidebar.button("Login")
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if login_btn:
+    if username in users and users[username] == password:
+        st.session_state.logged_in = True
+        st.sidebar.success("✅ Logged in as admin")
+    else:
+        st.sidebar.error("❌ Invalid username or password")
+
 # Access credentials from Streamlit secrets
 secrets = dict(st.secrets["gcp_service_account"])
 secrets["private_key"] = secrets["private_key"].replace("\\n", "\n")
