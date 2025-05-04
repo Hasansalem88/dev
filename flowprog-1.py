@@ -172,13 +172,19 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display all existing VINs
         st.write("New VIN being added:", new_vin_clean)  # Display the new VIN
 
-        # Debug: Check if VIN already exists
-        if new_vin_clean in df["VIN"].str.strip().str.upper().values:  # Check for case-insensitive match
+        # Normalize existing VINs: Clean and uppercase them
+        existing_vins_clean = df["VIN"].str.strip().str.upper().values
+        
+        # Debug: Check the cleaned existing VINs
+        st.write("Cleaned Existing VINs:", existing_vins_clean)
+
+        # Check if the new VIN already exists in the DataFrame (case-insensitive)
+        if new_vin_clean in existing_vins_clean:  # Compare the cleaned VINs
             st.error("❌ This VIN already exists.")
-            st.write("Duplicate VIN Check Result:", new_vin_clean in df["VIN"].str.strip().str.upper().values)  # Show the result of the comparison
         elif len(new_vin_clean) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
         else:
+            # Create the new vehicle record
             vehicle = {
                 "VIN": new_vin_clean,
                 "Model": new_model,
