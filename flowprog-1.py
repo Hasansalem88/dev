@@ -145,7 +145,7 @@ with st.expander("➕ Add New Vehicle", expanded=True):
     if submit:
         # Reload the data fresh to check for duplicate VINs
         df = load_data()  # Reload data from Google Sheets to get latest data
-
+        
         # Ensure the VIN field is clean (strip and uppercase for comparison)
         new_vin = new_vin.strip().upper()
 
@@ -173,9 +173,12 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
 
             # Save the updated DataFrame back to Google Sheets
-            save_data(df)
-            st.success(f"✅ VIN '{new_vin}' added successfully!")
-            st.rerun()  # Reload the page to reflect changes immediately
+            try:
+                save_data(df)  # Save the data back to Google Sheets
+                st.success(f"✅ VIN '{new_vin}' added successfully!")
+                st.rerun()  # Reload the page to reflect changes immediately
+            except Exception as e:
+                st.error(f"❌ Failed to save data to Google Sheets: {e}")
 
 with st.expander("🔄 Update Vehicle Status", expanded=True):
     if not df.empty and "VIN" in df.columns:
