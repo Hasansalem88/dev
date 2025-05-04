@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import plotly.express as px
 import gspread
 from google.oauth2 import service_account
 from io import BytesIO
+import xlsxwriter
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Assembly Line Tracker")
@@ -37,12 +37,6 @@ PRODUCTION_LINES = [
     "Odyssi", "Wheel Alignment", "ADAS", "PQG",
     "Tests Track", "CC4", "DVX", "Audit", "Delivery"
 ]
-
-STATUS_COLORS = {
-    "In Progress": "#FFA500",  # Orange
-    "Completed": "#008000",  # Green
-    "Repair Needed": "#FF0000",  # Red
-}
 
 # Load or initialize data
 def load_data():
@@ -92,7 +86,7 @@ report_option = st.sidebar.radio("Select Report Section", [
 # Sidebar Filters
 with st.sidebar:
     st.header("🔍 Filters")
-    selected_status = st.selectbox("Current Line Status", ["All"] + list(STATUS_COLORS.keys()))
+    selected_status = st.selectbox("Current Line Status", ["All"] + list(["In Progress", "Completed", "Repair Needed"]))
     selected_line = st.selectbox("Filter by Production Line", ["All"] + PRODUCTION_LINES)
     if st.button("Reset Filters"):
         selected_status = "All"
@@ -158,18 +152,21 @@ if report_option == "Vehicle Details":
     # Button to download as Excel with formatting and column width adjustment
     def export_to_excel(df):
         output = BytesIO()
+        
+        # Create a new Excel file
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, index=False, sheet_name='Vehicle Details')
             adjust_column_widths(writer, df)  # Adjust column widths
-            
+
             # Get the worksheet after writing the data
             worksheet = writer.sheets['Vehicle Details']
             
             # Apply formatting after writing the data
             cell_format = worksheet.add_format({'text_wrap': True})  # Ensure format is applied after the sheet is created
+            
+            # Loop through each cell to apply the formatting
             for i, row in df.iterrows():
                 for j, value in enumerate(row):
-                    # Write cell with text wrap formatting
                     worksheet.write(i + 1, j, value, cell_format)
 
         output.seek(0)
