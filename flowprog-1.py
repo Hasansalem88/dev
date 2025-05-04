@@ -150,10 +150,21 @@ with st.expander("➕ Add New Vehicle", expanded=True):
     new_vin = st.text_input("VIN (exactly 5 characters)").strip().upper()
     new_model = st.selectbox("Model", ["C43"])
     new_start_time = st.date_input("Start Date", datetime.now().date())
-    if st.button("Add Vehicle"):
+    
+    # Check if VIN exists (case-insensitive)
+    vin_exists = False
+    if new_vin:
+        vin_exists = df["VIN"].str.upper().eq(new_vin.upper()).any()
+        if vin_exists:
+            st.error("❌ This VIN already exists in the system!")
+    
+    # Disable add button if VIN is invalid or exists
+    add_disabled = (len(new_vin) != 5) or vin_exists
+    
+    if st.button("Add Vehicle", disabled=add_disabled):
         if len(new_vin) != 5:
             st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].values:
+        elif vin_exists:
             st.error("❌ This VIN already exists.")
         else:
             vehicle = {
@@ -166,6 +177,7 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             for line in PRODUCTION_LINES:
                 vehicle[line] = "In Progress" if line == "Body Shop" else ""
                 vehicle[f"{line}_time"] = datetime.now() if line == "Body Shop" else ""
+            
             df = pd.concat([df, pd.DataFrame([vehicle])], ignore_index=True)
             save_data(df)
             st.success(f"✅ {new_vin} added successfully!")
