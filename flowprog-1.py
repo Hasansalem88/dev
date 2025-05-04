@@ -161,9 +161,6 @@ with st.expander("➕ Add New Vehicle", expanded=True):
     # Reload the full DataFrame and fix VIN formatting
     df["VIN"] = df["VIN"].astype(str).str.zfill(5).str.upper()  # Always format VINs to 5-character padded strings
 
-    st.write("📋 Existing VINs (cleaned for check):")
-    st.dataframe(df["VIN"])  # This will display the list clearly
-
     if st.button("Add Vehicle"):
         new_vin_clean = new_vin.zfill(5).upper()  # Pad and uppercase to match stored format
 
