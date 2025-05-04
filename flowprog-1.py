@@ -165,21 +165,22 @@ with st.expander("➕ Add New Vehicle", expanded=True):
         # Debug: Display the whole DataFrame temporarily to inspect data
         st.write("Current DataFrame:", df)
 
-        # Ensure VIN is treated correctly
-        new_vin = new_vin.strip().upper()  # Clean the input VIN
+        # Clean and ensure consistent VIN format
+        new_vin_clean = new_vin.strip().upper()  # Remove leading/trailing spaces and convert to uppercase
 
-        # Display the list of existing VINs (case-insensitive comparison)
+        # Debug: Display existing VINs (case-insensitive check)
         st.write("Existing VINs (case-insensitive):", df["VIN"].str.strip().str.upper().values)  # Display all existing VINs
-        st.write("New VIN being added:", new_vin)  # Display the new VIN
+        st.write("New VIN being added:", new_vin_clean)  # Display the new VIN
 
-        # Check if VIN length is valid
-        if len(new_vin) != 5:
-            st.error("❌ VIN must be exactly 5 characters.")
-        elif new_vin in df["VIN"].str.strip().str.upper().values:  # Check case-insensitive and strip spaces
+        # Debug: Check if VIN already exists
+        if new_vin_clean in df["VIN"].str.strip().str.upper().values:  # Check for case-insensitive match
             st.error("❌ This VIN already exists.")
+            st.write("Duplicate VIN Check Result:", new_vin_clean in df["VIN"].str.strip().str.upper().values)  # Show the result of the comparison
+        elif len(new_vin_clean) != 5:
+            st.error("❌ VIN must be exactly 5 characters.")
         else:
             vehicle = {
-                "VIN": new_vin,
+                "VIN": new_vin_clean,
                 "Model": new_model,
                 "Current Line": "Body Shop",
                 "Start Time": datetime.combine(new_start_time, datetime.min.time()),
@@ -195,7 +196,7 @@ with st.expander("➕ Add New Vehicle", expanded=True):
             # Save the updated DataFrame back to Google Sheets
             save_data(df)
             
-            st.success(f"✅ {new_vin} added successfully!")
+            st.success(f"✅ {new_vin_clean} added successfully!")
             st.rerun()
 
 with st.expander("🔄 Update Vehicle Status", expanded=True):
