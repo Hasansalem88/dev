@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2 import service_account
+from google.cloud import storage
 from io import BytesIO
 import streamlit_authenticator as stauth
 import yaml
@@ -15,9 +16,6 @@ import json
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-import streamlit as st
-import json
-
 # Access the secrets
 gcp_service_account = st.secrets["gcp_service_account"]
 private_key = gcp_service_account["private_key"]
@@ -26,8 +24,6 @@ client_email = gcp_service_account["client_email"]
 # Debugging: Print out if the keys are accessed correctly
 st.write("Private Key:", private_key)
 st.write("Client Email:", client_email)
-
-# Make sure you're using the correct configuration for the GCP client or wherever these credentials are being used.
 
 # Initialize authenticator
 authenticator = stauth.Authenticate(
