@@ -5,8 +5,6 @@ plotly
 numpy
 google-auth
 XlsxWriter
-SafeLoader
 streamlit-authenticator
-yaml
-copy
+PyYAML
 bcrypt
