@@ -20,14 +20,25 @@ def secrets_to_dict(secrets_section):
     else:
         return secrets_section
 
-# Convert credentials secrets to a mutable plain dict
-credentials = secrets_to_dict(st.secrets["credentials"])
+# Function to deeply convert streamlit secrets to a normal dictionary
+def to_dict(obj):
+    if isinstance(obj, dict):
+        return {k: to_dict(v) for k, v in obj.items()}
+    elif hasattr(obj, '__dict__'):
+        return to_dict(vars(obj))
+    else:
+        return obj
 
-# Now it's safe to pass to Authenticate
-authenticator = stauth.Authenticate(credentials)
+# Properly convert secrets to plain dict
+raw_credentials = to_dict(st.secrets["credentials"])
 
-# Make a mutable copy of st.secrets
-credentials = copy.deepcopy(st.secrets["credentials"])
+# Pass credentials to the authenticator
+authenticator = stauth.Authenticate(
+    raw_credentials,
+    "auth_token",  # replace with your cookie name
+    "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # replace with your signature key
+    cookie_expiry_days=1
+)
 
 # Initialize the authenticator with the secrets
 authenticator = stauth.Authenticate(credentials)
