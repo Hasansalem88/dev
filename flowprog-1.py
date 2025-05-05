@@ -13,12 +13,18 @@ import copy
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Access the credentials directly from the secrets
-credentials = st.secrets['credentials']
+def secrets_to_dict(secrets_section):
+    # Recursively convert Streamlit's Secrets object to a regular dict
+    if isinstance(secrets_section, dict):
+        return {k: secrets_to_dict(v) for k, v in secrets_section.items()}
+    else:
+        return secrets_section
 
-# Initialize the authenticator
-# Get the credentials from the secrets
-credentials = st.secrets["credentials"]
+# Convert credentials secrets to a mutable plain dict
+credentials = secrets_to_dict(st.secrets["credentials"])
+
+# Now it's safe to pass to Authenticate
+authenticator = stauth.Authenticate(credentials)
 
 # Make a mutable copy of st.secrets
 credentials = copy.deepcopy(st.secrets["credentials"])
