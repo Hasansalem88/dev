@@ -8,6 +8,7 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 import copy
+import bcrypt
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
