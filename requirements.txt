@@ -6,3 +6,4 @@ numpy
 google-auth
 XlsxWriter
 SafeLoader
+streamlit_authenticator
