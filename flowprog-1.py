@@ -9,6 +9,7 @@ import yaml
 from yaml.loader import SafeLoader
 import copy
 import bcrypt
+import json
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
