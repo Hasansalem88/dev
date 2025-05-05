@@ -11,28 +11,26 @@ from yaml.loader import SafeLoader
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Read credentials from st.secrets
-credentials = st.secrets["credentials"]
-cookie = st.secrets["settings"]["cookie"]
+# Access the secrets
+credentials = st.secrets['credentials']
+cookie_name = st.secrets['settings']['cookie']['name']
+cookie_key = st.secrets['settings']['cookie']['key']
+cookie_expiry_days = st.secrets['settings']['cookie']['expiry_days']
 
 # Initialize the authenticator
 authenticator = stauth.Authenticate(
     credentials=credentials,
-    cookie_name=cookie["name"],
-    key=cookie["key"],
-    cookie_expiry_days=cookie["expiry_days"]
+    cookie_name=cookie_name,
+    cookie_key=cookie_key,
+    cookie_expiry_days=cookie_expiry_days,
 )
 
-# Create login widget
-name, authentication_status, username = authenticator.login("Login", "main")
-
+# Example authentication logic
+name, authentication_status, username = authenticator.login('Login')
 if authentication_status:
-    authenticator.logout("Logout", "sidebar")
-    st.write(f"Welcome *{name}*")
-elif authentication_status is False:
-    st.error("Username/password is incorrect")
-elif authentication_status is None:
-    st.warning("Please enter your username and password")
+    st.write(f"Welcome {name}!")
+else:
+    st.write("Please log in")
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
