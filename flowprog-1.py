@@ -15,23 +15,24 @@ st.title("🚗 Vehicle Production Flow Dashboard")
 credentials = st.secrets["credentials"]
 cookie = st.secrets["settings"]["cookie"]
 
-# Set up authenticator
+# Initialize authenticator
 authenticator = stauth.Authenticate(
-    credentials,
-    cookie["name"],
-    cookie["key"],
-    cookie["expiry_days"]
+    credentials=credentials,
+    cookie_name=cookie["name"],
+    key=cookie["key"],
+    cookie_expiry_days=cookie["expiry_days"]
 )
 
-name, auth_status, username = authenticator.login("Login", "main")
+# Login widget
+name, authentication_status, username = authenticator.login("Login", "main")
 
-if auth_status:
-    st.success(f"Welcome *{name}*")
-    # Your app content here
-elif auth_status is False:
-    st.error("Username or password is incorrect.")
-elif auth_status is None:
-    st.warning("Please enter your username and password.")
+if authentication_status:
+    authenticator.logout("Logout", "sidebar")
+    st.write(f"Welcome *{name}*")
+elif authentication_status is False:
+    st.error("Username/password is incorrect")
+elif authentication_status is None:
+    st.warning("Please enter your username and password")
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
