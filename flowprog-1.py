@@ -30,10 +30,16 @@ name, auth_status, username = authenticator.login("Login", "main")
 
 if auth_status:
     st.success(f"Welcome {name}!")
+    st.session_state.logged_in = True  # Ensure admin login status
 elif auth_status is False:
     st.error("Username or password is incorrect")
 else:
     st.info("Please enter your login credentials")
+
+# Now use the admin login system only when logged in
+if st.session_state.get("logged_in"):
+    # Allow admin to perform actions like Add/Update Vehicle, etc.
+    pass
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
