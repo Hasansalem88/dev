@@ -7,3 +7,5 @@ google-auth
 XlsxWriter
 SafeLoader
 streamlit_authenticator
+yaml.loader
+copy
