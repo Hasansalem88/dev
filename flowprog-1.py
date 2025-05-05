@@ -13,14 +13,7 @@ import copy
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-def secrets_to_dict(secrets_section):
-    # Recursively convert Streamlit's Secrets object to a regular dict
-    if isinstance(secrets_section, dict):
-        return {k: secrets_to_dict(v) for k, v in secrets_section.items()}
-    else:
-        return secrets_section
-
-# Function to deeply convert streamlit secrets to a normal dictionary
+# Properly convert secrets to plain dict
 def to_dict(obj):
     if isinstance(obj, dict):
         return {k: to_dict(v) for k, v in obj.items()}
@@ -29,26 +22,25 @@ def to_dict(obj):
     else:
         return obj
 
-# Properly convert secrets to plain dict
-raw_credentials = to_dict(st.secrets["credentials"])
+credentials = to_dict(st.secrets["credentials"])
 
-# Pass credentials to the authenticator
+# Initialize the authenticator
 authenticator = stauth.Authenticate(
-    raw_credentials,
+    credentials,
     "auth_token",  # replace with your cookie name
     "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # replace with your signature key
     cookie_expiry_days=1
 )
 
-# Initialize the authenticator with the secrets
-authenticator = stauth.Authenticate(credentials)
+# Login form
+name, authentication_status, username = authenticator.login("Login", "main")
 
-# Example authentication logic
-name, authentication_status, username = authenticator.login('Login')
 if authentication_status:
-    st.write(f"Welcome {name}!")
-else:
-    st.write("Please log in")
+    st.success(f"Welcome {name}!")
+elif authentication_status is False:
+    st.error("Username/password is incorrect")
+elif authentication_status is None:
+    st.warning("Please enter your username and password")
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
