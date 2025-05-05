@@ -11,29 +11,27 @@ from yaml.loader import SafeLoader
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Load config from secrets.toml
-config = {
-    "credentials": st.secrets.credentials,
-    "cookie": st.secrets.settings["cookie"]
-}
+# Load secrets
+credentials = st.secrets["credentials"]
+cookie = st.secrets["settings"]["cookie"]
 
+# Set up authenticator
 authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
+    credentials,
+    cookie["name"],
+    cookie["key"],
+    cookie["expiry_days"]
 )
 
-# Show login widget
-name, auth_status, username = authenticator.login('Login', 'main')
+name, auth_status, username = authenticator.login("Login", "main")
 
 if auth_status:
     st.success(f"Welcome *{name}*")
-    # ➤ Load your app or dashboard here
+    # Your app content here
 elif auth_status is False:
     st.error("Username or password is incorrect.")
 elif auth_status is None:
-    st.warning("Please enter your login credentials.")
+    st.warning("Please enter your username and password.")
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
