@@ -11,11 +11,11 @@ from yaml.loader import SafeLoader
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Load secrets
+# Read credentials from st.secrets
 credentials = st.secrets["credentials"]
 cookie = st.secrets["settings"]["cookie"]
 
-# Initialize authenticator
+# Initialize the authenticator
 authenticator = stauth.Authenticate(
     credentials=credentials,
     cookie_name=cookie["name"],
@@ -23,7 +23,7 @@ authenticator = stauth.Authenticate(
     cookie_expiry_days=cookie["expiry_days"]
 )
 
-# Login widget
+# Create login widget
 name, authentication_status, username = authenticator.login("Login", "main")
 
 if authentication_status:
