@@ -11,18 +11,15 @@ from yaml.loader import SafeLoader
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Access the secrets
+# Access the credentials directly from the secrets
 credentials = st.secrets['credentials']
-cookie_name = st.secrets['settings']['cookie']['name']
-cookie_key = st.secrets['settings']['cookie']['key']
-cookie_expiry_days = st.secrets['settings']['cookie']['expiry_days']
 
 # Initialize the authenticator
 authenticator = stauth.Authenticate(
     credentials=credentials,
-    cookie_name=cookie_name,
-    cookie_key=cookie_key,
-    cookie_expiry_days=cookie_expiry_days,
+    cookie_name="auth_token",
+    cookie_key="your_secure_key",
+    cookie_expiry_days=30,
 )
 
 # Example authentication logic
