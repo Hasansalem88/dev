@@ -8,4 +8,4 @@ XlsxWriter
 streamlit-authenticator
 PyYAML
 bcrypt
-google.cloud
+storage
