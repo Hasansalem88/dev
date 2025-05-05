@@ -27,8 +27,8 @@ credentials = to_dict(st.secrets["credentials"])
 # Initialize the authenticator
 authenticator = stauth.Authenticate(
     credentials,
-    "auth_token",  # replace with your cookie name
-    "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # replace with your signature key
+    "admin",  # replace with your cookie name
+    "$2b$12$8ajX8oB.VpxK9ytwgkl./uu1RDGi84bLyEEAPBceFLk1yDWdWMFlu",  # replace with your signature key
     cookie_expiry_days=1
 )
 
