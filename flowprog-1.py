@@ -20,6 +20,9 @@ credentials = st.secrets['credentials']
 # Get the credentials from the secrets
 credentials = st.secrets["credentials"]
 
+# Make a mutable copy of st.secrets
+credentials = copy.deepcopy(st.secrets["credentials"])
+
 # Initialize the authenticator with the secrets
 authenticator = stauth.Authenticate(credentials)
 
