@@ -6,6 +6,7 @@ numpy
 google-auth
 XlsxWriter
 SafeLoader
-streamlit_authenticator
+streamlit-authenticator
 yaml
 copy
+bcrypt
