@@ -29,7 +29,7 @@ st.write("Client Email:", client_email)
 authenticator = stauth.Authenticate(
     credentials,
     "auth_token",  # Cookie name
-    "some_signature_key",  # Signature key
+    "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # Signature key
     cookie_expiry_days=1
 )
 
