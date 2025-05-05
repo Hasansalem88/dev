@@ -14,34 +14,26 @@ import bcrypt
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Properly convert secrets to plain dict
-def to_dict(obj):
-    if isinstance(obj, dict):
-        return {k: to_dict(v) for k, v in obj.items()}
-    elif hasattr(obj, '__dict__'):
-        return to_dict(vars(obj))
-    else:
-        return obj
+# Access credentials from Streamlit secrets
+credentials = st.secrets["credentials"]
 
-credentials = to_dict(st.secrets["credentials"])
-
-# Initialize the authenticator
+# Initialize authenticator
 authenticator = stauth.Authenticate(
     credentials,
-    "auth_token",  # replace with your cookie name
-    "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # replace with your signature key
+    "auth_token",  # Cookie name
+    "some_signature_key",  # Signature key
     cookie_expiry_days=1
 )
 
-# Login form
-name, authentication_status, username = authenticator.login("Login", "main")
+# Login UI
+name, auth_status, username = authenticator.login("Login", "main")
 
-if authentication_status:
+if auth_status:
     st.success(f"Welcome {name}!")
-elif authentication_status is False:
-    st.error("Username/password is incorrect")
-elif authentication_status is None:
-    st.warning("Please enter your username and password")
+elif auth_status is False:
+    st.error("Username or password is incorrect")
+else:
+    st.info("Please enter your login credentials")
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
