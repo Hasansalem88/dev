@@ -14,8 +14,10 @@ import bcrypt
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
 
-# Access credentials from Streamlit secrets
-credentials = st.secrets["credentials"]
+# Access the secrets
+private_key = st.secrets["gcp_service_account"]["private_key"]
+client_email = st.secrets["gcp_service_account"]["client_email"]
+# Continue with your GCP or other configurations
 
 # Initialize authenticator
 authenticator = stauth.Authenticate(
