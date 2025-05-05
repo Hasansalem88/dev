@@ -15,12 +15,11 @@ st.title("🚗 Vehicle Production Flow Dashboard")
 credentials = st.secrets['credentials']
 
 # Initialize the authenticator
-authenticator = stauth.Authenticate(
-    credentials=credentials,
-    cookie_name="auth_token",
-    cookie_key="your_secure_key",
-    cookie_expiry_days=30,
-)
+# Get the credentials from the secrets
+credentials = st.secrets["credentials"]
+
+# Initialize the authenticator with the secrets
+authenticator = stauth.Authenticate(credentials)
 
 # Example authentication logic
 name, authentication_status, username = authenticator.login('Login')
