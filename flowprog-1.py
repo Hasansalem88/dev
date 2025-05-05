@@ -3,51 +3,11 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2 import service_account
-from google.cloud import storage
 from io import BytesIO
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
-import copy
-import bcrypt
-import json
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
 st.title("🚗 Vehicle Production Flow Dashboard")
-
-# Access the secrets
-gcp_service_account = st.secrets["gcp_service_account"]
-private_key = gcp_service_account["private_key"]
-client_email = gcp_service_account["client_email"]
-
-# Debugging: Print out if the keys are accessed correctly
-st.write("Private Key:", private_key)
-st.write("Client Email:", client_email)
-
-# Initialize authenticator
-authenticator = stauth.Authenticate(
-    credentials,
-    "auth_token",  # Cookie name
-    "KEuQXEyCIt1AgyIFd5LQi85XmAGB8fsN8i2GdeN9DHQ",  # Signature key
-    cookie_expiry_days=1
-)
-
-# Login UI
-name, auth_status, username = authenticator.login("Login", "main")
-
-if auth_status:
-    st.success(f"Welcome {name}!")
-    st.session_state.logged_in = True  # Ensure admin login status
-elif auth_status is False:
-    st.error("Username or password is incorrect")
-else:
-    st.info("Please enter your login credentials")
-
-# Now use the admin login system only when logged in
-if st.session_state.get("logged_in"):
-    # Allow admin to perform actions like Add/Update Vehicle, etc.
-    pass
 
 # --- Admin Login System ---
 users = {"admin": "admin123"}
@@ -218,8 +178,8 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# Admin section for adding/updating vehicle
-if st.session_state.get("logged_in"):
+# أولاً تأكد من أن المستخدم مسجل دخوله
+if "logged_in" in st.session_state and st.session_state["logged_in"]:
     # Section: Add / Update Vehicle
     st.subheader("✏️ Add / Update Vehicle")
 
@@ -285,4 +245,55 @@ if st.session_state.get("logged_in"):
                 st.success(f"✅ {update_vin} status updated to {new_status} on {update_line}.")
                 st.rerun()
 else:
-    st.info("🔒 Add Vin - Admin Only.")
+    st.info("🔒Add Vin - Admin Only.")
+
+# Section: Delete Vehicle
+if st.session_state.get("logged_in"):
+    st.subheader("🗑️ Delete Vehicle")
+
+    with st.expander("🗑️ Remove Vehicle", expanded=True):
+        vin_to_delete = st.selectbox("Select VIN to Delete", df["VIN"])
+
+        if st.button("Delete Vehicle"):
+            if vin_to_delete:
+                df = df[df["VIN"] != vin_to_delete]
+                save_data(df)
+                st.success(f"✅ Vehicle {vin_to_delete} has been deleted.")
+                st.rerun()
+else:
+    st.info("🔒 Update Status - Admin Only.")
+    
+# Section: Bulk Update Status
+if st.session_state.get("logged_in"):
+    st.subheader("📊 Bulk Update Vehicle Status")
+
+    with st.expander("🔄 Bulk Update Status", expanded=True):
+        bulk_update_vin = st.text_area("Enter VINs (separate by comma)").strip().upper()
+        bulk_new_status = st.selectbox("New Status for All VINs", ["Completed", "In Progress", "Repair Needed"])
+
+        if st.button("Update Bulk Status"):
+            if bulk_update_vin:
+                vins = [vin.strip().zfill(5) for vin in bulk_update_vin.split(",")]
+                for vin in vins:
+                    if vin in df["VIN"].values:
+                        idx = df[df["VIN"] == vin].index[0]
+                        current_line = df.at[idx, "Current Line"]
+                        if bulk_new_status == "Completed":
+                            next_line = get_next_line(current_line)
+                            if next_line:
+                                df.at[idx, current_line] = bulk_new_status
+                                df.at[idx, f"{current_line}_time"] = datetime.now()
+                                df.at[idx, "Current Line"] = next_line
+                                df.at[idx, f"{next_line}_time"] = datetime.now()
+                                # Set next line's status to "In Progress"
+                                df.at[idx, next_line] = "In Progress"
+                                df.at[idx, f"{next_line}_time"] = datetime.now()
+                        else:
+                            df.at[idx, current_line] = bulk_new_status
+                            df.at[idx, f"{current_line}_time"] = datetime.now()
+                        df.at[idx, "Last Updated"] = datetime.now()
+                save_data(df)
+                st.success(f"✅ Bulk status updated for {len(vins)} vehicles.")
+                st.rerun()
+else:
+    st.info("🔒 Delete Vin - Admin Only.")
