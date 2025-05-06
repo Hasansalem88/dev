@@ -245,6 +245,27 @@ fig = Figure(Indicator(
                'value': avg_completion_time}}))
 st.plotly_chart(fig, use_container_width=True)
 
+# Sample timeline for one vehicle
+sample_vin = df['VIN'].iloc[0] if not df.empty else None
+if sample_vin:
+    timeline_data = []
+    for line in PRODUCTION_LINES:
+        if pd.notna(df.loc[df['VIN'] == sample_vin, f"{line}_time"].iloc[0]):
+            timeline_data.append({
+                'Stage': line,
+                'Start': df.loc[df['VIN'] == sample_vin, f"{line}_time"].iloc[0] - pd.Timedelta(hours=2),
+                'Finish': df.loc[df['VIN'] == sample_vin, f"{line}_time"].iloc[0],
+                'Status': df.loc[df['VIN'] == sample_vin, line].iloc[0]
+            })
+    
+    fig = px.timeline(pd.DataFrame(timeline_data),
+                     x_start="Start",
+                     x_end="Finish",
+                     y="Stage",
+                     color="Status",
+                     title=f"<b>Production Timeline for VIN: {sample_vin}</b>")
+    st.plotly_chart(fig, use_container_width=True)
+
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
