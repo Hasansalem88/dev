@@ -229,7 +229,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 #Production Velocity Gauge
 
-avg_completion_time = 10  # Replace with actual calculation
+avg_completion_time = 2  # Replace with actual calculation
 fig = Figure(Indicator(
     mode="gauge+number",
     value=avg_completion_time,
