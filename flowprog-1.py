@@ -174,6 +174,79 @@ with col3:
 # Optional: Add a small space before the next section
 st.markdown("<br>", unsafe_allow_html=True)
 
+# --- Enhanced Scorecards ---
+st.subheader("📊 Production Overview")
+
+# Calculate metrics
+total_vehicles = len(df)
+completed_vehicles = len(df[df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)])
+in_progress_vehicles = len(df[df.apply(lambda row: any(row.get(line) == "In Progress" for line in PRODUCTION_LINES), axis=1)])
+repair_needed_vehicles = len(df[df.apply(lambda row: any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES), axis=1)])
+
+# Create columns
+col1, col2, col3 = st.columns(3)
+
+# Custom CSS for cards
+st.markdown("""
+<style>
+    .metric-card {
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .completed-card {
+        background-color: #d4edda;
+        border-left: 5px solid #28a745;
+    }
+    .progress-card {
+        background-color: #fff3cd;
+        border-left: 5px solid #ffc107;
+    }
+    .repair-card {
+        background-color: #f8d7da;
+        border-left: 5px solid #dc3545;
+    }
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Completed Card
+with col1:
+    st.markdown(f"""
+    <div class="metric-card completed-card">
+        <h3>✅ Completed</h3>
+        <div class="metric-value">{completed_vehicles}</div>
+        <p>{round(completed_vehicles/total_vehicles*100 if total_vehicles > 0 else 0, 1)}% of total</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# In Progress Card
+with col2:
+    st.markdown(f"""
+    <div class="metric-card progress-card">
+        <h3>🔄 In Progress</h3>
+        <div class="metric-value">{in_progress_vehicles}</div>
+        <p>{round(in_progress_vehicles/total_vehicles*100 if total_vehicles > 0 else 0, 1)}% of total</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Repair Needed Card
+with col3:
+    st.markdown(f"""
+    <div class="metric-card repair-card">
+        <h3>⚠️ Repair Needed</h3>
+        <div class="metric-value">{repair_needed_vehicles}</div>
+        <p>{round(repair_needed_vehicles/total_vehicles*100 if total_vehicles > 0 else 0, 1)}% of total</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Optional: Add a small space before the next section
+st.markdown("<br>", unsafe_allow_html=True)
+
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
