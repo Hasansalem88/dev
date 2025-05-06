@@ -4,6 +4,7 @@ from datetime import datetime
 import gspread
 from google.oauth2 import service_account
 from io import BytesIO
+import plotly.express as px
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
@@ -204,6 +205,26 @@ with col3:
 
 # Optional: Add a small space before the next section
 st.markdown("<br>", unsafe_allow_html=True)
+
+# Stage completion rates
+stage_completion = pd.DataFrame({
+    'Stage': PRODUCTION_LINES,
+    'Completed': [len(df[df[line] == "Completed"]) for line in PRODUCTION_LINES],
+    'In Progress': [len(df[df[line] == "In Progress"]) for line in PRODUCTION_LINES],
+    'Repair Needed': [len(df[df[line] == "Repair Needed"]) for line in PRODUCTION_LINES]
+})
+
+fig = px.bar(stage_completion, 
+             x='Stage', 
+             y=['Completed', 'In Progress', 'Repair Needed'],
+             title='<b>Status Distribution by Production Line</b>',
+             barmode='stack',
+             color_discrete_map={
+                 'Completed': '#28a745',
+                 'In Progress': '#ffc107',
+                 'Repair Needed': '#dc3545'
+             })
+st.plotly_chart(fig, use_container_width=True)
 
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
