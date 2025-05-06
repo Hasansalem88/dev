@@ -245,6 +245,19 @@ fig = Figure(Indicator(
                'value': avg_completion_time}}))
 st.plotly_chart(fig, use_container_width=True)
 
+# Daily completion count
+if 'Last Updated' in df.columns:
+    df['Day'] = pd.to_datetime(df['Last Updated']).dt.date
+    daily_prod = df.groupby('Day').size().reset_index(name='Count')
+    
+    fig = px.line(daily_prod,
+                 x='Day',
+                 y='Count',
+                 title='<b>Daily Production Volume</b>',
+                 markers=True)
+    fig.update_xaxes(rangeslider_visible=True)
+    st.plotly_chart(fig, use_container_width=True)
+
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
