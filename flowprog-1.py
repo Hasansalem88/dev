@@ -236,9 +236,9 @@ fig = Figure(Indicator(
     title={'text': "<b>Average Completion Time (Days)</b>"},
     gauge={'axis': {'range': [None, 30]},
            'steps': [
-               {'range': [0, 15], 'color': "lightgreen"},
-               {'range': [15, 25], 'color': "orange"},
-               {'range': [25, 30], 'color': "red"}],
+               {'range': [0, 2], 'color': "lightgreen"},
+               {'range': [2, 5], 'color': "orange"},
+               {'range': [5, 30], 'color': "red"}],
            'threshold': {
                'line': {'color': "black", 'width': 4},
                'thickness': 0.75,
