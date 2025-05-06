@@ -245,18 +245,6 @@ fig = Figure(Indicator(
                'value': avg_completion_time}}))
 st.plotly_chart(fig, use_container_width=True)
 
-# Calculate queue lengths
-queue_data = []
-for i, line in enumerate(PRODUCTION_LINES[:-1]):
-    next_line = PRODUCTION_LINES[i+1]
-    waiting = len(df[(df[line] == "Completed") & (df[next_line] == "")])
-    queue_data.append({'From': line, 'To': next_line, 'Waiting': waiting})
-
-fig = px.funnel_area(names=[d['From'] for d in queue_data],
-                    values=[d['Waiting'] for d in queue_data],
-                    title="<b>Bottleneck Analysis: Vehicles Waiting Between Stages</b>")
-st.plotly_chart(fig, use_container_width=True)
-
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
