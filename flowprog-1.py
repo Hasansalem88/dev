@@ -132,48 +132,6 @@ def highlight_status(val):
         return "background-color: #f8d7da; color: #721c24;"  # Red
     return ""
 
-# --- Scorecards ---
-st.subheader("📊 Production Overview")
-
-# Create columns for the scorecards
-col1, col2, col3 = st.columns(3)
-
-# Calculate metrics
-total_vehicles = len(df)
-completed_vehicles = len(df[df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)])
-in_progress_vehicles = len(df[df.apply(lambda row: any(row.get(line) == "In Progress" for line in PRODUCTION_LINES), axis=1)])
-repair_needed_vehicles = len(df[df.apply(lambda row: any(row.get(line) == "Repair Needed" for line in PRODUCTION_LINES), axis=1)])
-
-# Scorecard 1: Completed Vehicles
-with col1:
-    st.metric(
-        label="✅ Completed Vehicles",
-        value=f"{completed_vehicles}",
-        help="Vehicles that have completed all production lines"
-    )
-    st.progress(completed_vehicles / total_vehicles if total_vehicles > 0 else 0)
-
-# Scorecard 2: In Progress Vehicles
-with col2:
-    st.metric(
-        label="🔄 In Progress Vehicles",
-        value=f"{in_progress_vehicles}",
-        help="Vehicles currently in production"
-    )
-    st.progress(in_progress_vehicles / total_vehicles if total_vehicles > 0 else 0)
-
-# Scorecard 3: Repair Needed Vehicles
-with col3:
-    st.metric(
-        label="⚠️ Repair Needed Vehicles",
-        value=f"{repair_needed_vehicles}",
-        help="Vehicles requiring repair at any stage"
-    )
-    st.progress(repair_needed_vehicles / total_vehicles if total_vehicles > 0 else 0)
-
-# Optional: Add a small space before the next section
-st.markdown("<br>", unsafe_allow_html=True)
-
 # --- Enhanced Scorecards ---
 st.subheader("📊 Production Overview")
 
