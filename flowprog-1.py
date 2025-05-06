@@ -5,6 +5,7 @@ import gspread
 from google.oauth2 import service_account
 from io import BytesIO
 import plotly.express as px
+from plotly.graph_objects import Figure, Indicator
 
 # Page setup
 st.set_page_config(layout="wide", page_title="🚗 Vehicle Production Tracker")
@@ -224,6 +225,24 @@ fig = px.bar(stage_completion,
                  'In Progress': '#ffc107',
                  'Repair Needed': '#dc3545'
              })
+st.plotly_chart(fig, use_container_width=True)
+
+#Production Velocity Gauge
+
+avg_completion_time = 10  # Replace with actual calculation
+fig = Figure(Indicator(
+    mode="gauge+number",
+    value=avg_completion_time,
+    title={'text': "<b>Average Completion Time (Days)</b>"},
+    gauge={'axis': {'range': [None, 30]},
+           'steps': [
+               {'range': [0, 15], 'color': "lightgreen"},
+               {'range': [15, 25], 'color': "orange"},
+               {'range': [25, 30], 'color': "red"}],
+           'threshold': {
+               'line': {'color': "black", 'width': 4},
+               'thickness': 0.75,
+               'value': avg_completion_time}}))
 st.plotly_chart(fig, use_container_width=True)
 
 # Section: Vehicle Details
