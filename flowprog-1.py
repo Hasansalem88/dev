@@ -198,7 +198,7 @@ with col2:
 with col3:
     st.markdown(f"""
     <div class="metric-card repair-card">
-        <h3>⚠️ Repair Needed</h3>
+        <h3>⚠️ In Repair </h3>
         <div class="metric-value">{repair_needed_vehicles}</div>
         <p>{round(repair_needed_vehicles/total_vehicles*100 if total_vehicles > 0 else 0, 1)}% of total</p>
     </div>
