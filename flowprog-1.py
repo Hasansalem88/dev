@@ -227,44 +227,6 @@ fig = px.bar(stage_completion,
              })
 st.plotly_chart(fig, use_container_width=True)
 
-# Kanban Board
-st.subheader("📋 Production Kanban Board")
-
-# Create columns for each major stage
-kanban_cols = st.columns(4)
-stages_grouped = {
-    'Pre-Assembly': ['Body Shop', 'Paint'],
-    'Assembly': ['TRIM', 'UB', 'FINAL'],
-    'Testing': ['Odyssi', 'Wheel Alignment', 'ADAS', 'PQG', 'Tests Track'],
-    'Delivery Prep': ['CC4', 'DVX', 'Audit', 'Delivery']
-}
-
-for i, (group_name, stages) in enumerate(stages_grouped.items()):
-    with kanban_cols[i]:
-        st.markdown(f"### {group_name}")
-        for line in stages:
-            vehicles = df[df['Current Line'] == line]
-            with st.expander(f"{line} ({len(vehicles)})", expanded=True):
-                for _, vehicle in vehicles.iterrows():
-                    status = vehicle[line]
-                    status_color = {
-                        "In Progress": "🟡",
-                        "Completed": "🟢",
-                        "Repair Needed": "🔴"
-                    }.get(status, "⚪")
-                    
-                    st.markdown(f"""
-                    {status_color} **{vehicle['VIN']}**  
-                    Model: {vehicle['Model']}  
-                    Status: *{status}*  
-                    Last Update: {vehicle['Last Updated'].strftime('%m/%d %H:%M') if pd.notna(vehicle['Last Updated']) else 'N/A'}
-                    """)
-                    st.progress(
-                        100 if status == "Completed" 
-                        else 50 if status == "In Progress" 
-                        else 10
-                    )
-
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
