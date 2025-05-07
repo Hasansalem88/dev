@@ -227,22 +227,34 @@ fig = px.bar(stage_completion,
              })
 st.plotly_chart(fig, use_container_width=True)
 
-#Production Velocity Gauge
+# Line Monitor - Real-Time Status
+st.subheader("🏭 Production Line Monitor")
 
-avg_completion_time = 2  # Replace with actual calculation
-fig = Figure(Indicator(
-    mode="gauge+number",
-    value=avg_completion_time,
-    title={'text': "<b>Average Completion Time (Days)</b>"},
-    gauge={'axis': {'range': [None, 10]},
-           'steps': [
-               {'range': [0, 2], 'color': "lightgreen"},
-               {'range': [2, 5], 'color': "orange"},
-               {'range': [5, 10], 'color': "red"}],
-           'threshold': {
-               'line': {'color': "black", 'width': 4},
-               'thickness': 0.75,
-               'value': avg_completion_time}}))
+# Calculate vehicles in each line
+line_status = []
+for line in PRODUCTION_LINES:
+    line_status.append({
+        'Line': line,
+        'In Progress': len(df[df[line] == "In Progress"]),
+        'Completed': len(df[df[line] == "Completed"]),
+        'Repair Needed': len(df[df[line] == "Repair Needed"])
+    })
+    
+line_df = pd.DataFrame(line_status).set_index('Line')
+
+# Visualize with a stacked bar chart
+fig = px.bar(line_df, 
+             x=line_df.index, 
+             y=['In Progress', 'Completed', 'Repair Needed'],
+             title='<b>Current Line Status</b>',
+             color_discrete_map={
+                 'In Progress': '#FFC107',
+                 'Completed': '#28A745',
+                 'Repair Needed': '#DC3545'
+             },
+             height=400)
+
+fig.update_layout(barmode='stack', xaxis_title="", yaxis_title="Vehicle Count")
 st.plotly_chart(fig, use_container_width=True)
 
 # Section: Vehicle Details
