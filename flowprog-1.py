@@ -227,6 +227,59 @@ fig = px.bar(stage_completion,
              })
 st.plotly_chart(fig, use_container_width=True)
 
+# Dashboard Layout
+st.subheader("📊 Production Dashboard")
+
+# Row 1: KPI Cards
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+with kpi1:
+    st.metric("Total Vehicles", len(df))
+with kpi2:
+    completed = len(df[df.apply(lambda x: all(x[line] == "Completed" for line in PRODUCTION_LINES), axis=1)])
+    st.metric("Fully Completed", f"{completed} ({completed/len(df)*100:.1f}%)" if len(df) > 0 else "0")
+with kpi3:
+    in_progress = len(df[df.apply(lambda x: any(x[line] == "In Progress" for line in PRODUCTION_LINES), axis=1)])
+    st.metric("In Production", in_progress)
+with kpi4:
+    repairs = len(df[df.apply(lambda x: any(x[line] == "Repair Needed" for line in PRODUCTION_LINES), axis=1)])
+    st.metric("Requiring Repair", repairs)
+
+# Row 2: Time Metrics
+st.markdown("---")
+time1, time2, time3 = st.columns(3)
+with time1:
+    avg_time = df['Last Updated'] - df['Start Time']
+    st.metric("Avg Cycle Time", f"{avg_time.mean().total_seconds()/3600:.1f} hours" if not avg_time.empty else "N/A")
+with time2:
+    st.metric("Current Line Bottleneck", max(PRODUCTION_LINES, key=lambda x: len(df[df['Current Line'] == x])))
+with time3:
+    oldest = df.loc[df['Last Updated'].idxmin()] if not df.empty else None
+    st.metric("Oldest Vehicle", f"{oldest['VIN']} ({oldest['Current Line']})" if oldest else "N/A")
+
+# Row 3: Trend Analysis
+st.markdown("---")
+trend_col1, trend_col2 = st.columns(2)
+with trend_col1:
+    # Daily completion trend
+    daily_complete = df[df['Current Line'] == 'Delivery'].groupby(
+        df['Last Updated'].dt.date
+    ).size()
+    st.line_chart(daily_complete, use_container_width=True)
+    
+with trend_col2:
+    # Stage duration heatmap
+    duration_data = []
+    for line in PRODUCTION_LINES:
+        if f"{line}_time" in df.columns:
+            durations = (df['Last Updated'] - pd.to_datetime(df[f"{line}_time"])).dt.total_seconds()/3600
+            duration_data.append(durations.mean())
+    
+    fig = px.imshow([duration_data],
+                   x=PRODUCTION_LINES,
+                   labels=dict(x="Production Line", color="Hours"),
+                   aspect="auto")
+    st.plotly_chart(fig, use_container_width=True)
+
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
