@@ -227,6 +227,66 @@ fig = px.bar(stage_completion,
              })
 st.plotly_chart(fig, use_container_width=True)
 
+# Add this code right after your existing scorecards section (after the repair needed card)
+
+# --- Daily Completion Scorecard ---
+st.markdown("<br>", unsafe_allow_html=True)  # Add some space
+st.subheader("📅 Daily Production")
+
+# Get today's date for filtering
+today = datetime.now().date()
+
+# Calculate daily completion metrics
+daily_completed = len(df[df.apply(lambda row: 
+    all(row.get(line) == "Completed" for line in PRODUCTION_LINES) and 
+    pd.to_datetime(row["Last Updated"]).date() == today, axis=1)])
+
+# Create columns for daily metrics
+daily_col1, daily_col2 = st.columns(2)
+
+# Daily Completed Card
+with daily_col1:
+    st.markdown(f"""
+    <div class="metric-card completed-card">
+        <h3>✅ Today's Completed</h3>
+        <div class="metric-value">{daily_completed}</div>
+        <p>Vehicles finished today</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Daily Target Comparison Card (example with 10 as target)
+with daily_col2:
+    daily_target = 10  # You can make this dynamic if you have targets
+    progress_percent = min(100, (daily_completed/daily_target)*100) if daily_target > 0 else 0
+    
+    st.markdown(f"""
+    <div class="metric-card progress-card">
+        <h3>🎯 Daily Target Progress</h3>
+        <div class="metric-value">{daily_completed}/{daily_target}</div>
+        <div style="width: 100%; background-color: #e9ecef; border-radius: 5px; margin-top: 10px;">
+            <div style="width: {progress_percent}%; height: 20px; background-color: #28a745; border-radius: 5px; 
+                        text-align: center; color: white; font-weight: bold;">{round(progress_percent,1)}%</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Optional: Add a daily completion trend chart
+try:
+    # Extract dates from Last Updated column
+    df['CompletionDate'] = pd.to_datetime(df['LastUpdated']).dt.date
+    daily_trend = df[df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES, axis=1)]
+    daily_trend = daily_trend.groupby('CompletionDate').size().reset_index(name='CompletedCount')
+    
+    fig = px.line(daily_trend, 
+                 x='CompletionDate', 
+                 y='CompletedCount',
+                 title='<b>Daily Completion Trend</b>',
+                 markers=True)
+    fig.update_layout(xaxis_title='Date', yaxis_title='Vehicles Completed')
+    st.plotly_chart(fig, use_container_width=True)
+except Exception as e:
+    st.warning(f"Could not display trend chart: {e}")
+
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
