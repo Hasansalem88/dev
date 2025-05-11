@@ -288,9 +288,26 @@ st.plotly_chart(fig, use_container_width=True)
 # Section: Vehicle Details
 st.subheader("📋 Vehicle Details")
 
-columns_to_display = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
-styled_df = filtered_df[columns_to_display].style.applymap(highlight_status, subset=PRODUCTION_LINES)
-st.dataframe(styled_df, use_container_width=True)
+# Safely get columns to display (only those that exist in the DataFrame)
+existing_columns = [col for col in df.columns if not col.endswith("_time") and col != "Start Time"]
+columns_to_display = [col for col in existing_columns if col in filtered_df.columns]
+
+if not columns_to_display:
+    st.warning("No columns available to display. Please check your data source.")
+else:
+    try:
+        # Apply styling only to production line columns that exist
+        production_lines_to_style = [col for col in PRODUCTION_LINES if col in filtered_df.columns]
+        
+        styled_df = filtered_df[columns_to_display].style.applymap(
+            highlight_status, 
+            subset=production_lines_to_style
+        )
+        st.dataframe(styled_df, use_container_width=True)
+    except Exception as e:
+        st.error(f"Error displaying vehicle details: {str(e)}")
+        st.write("Raw data for debugging:")
+        st.dataframe(filtered_df, use_container_width=True)
 
 # Excel export
 def export_to_excel(df):
