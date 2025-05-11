@@ -227,8 +227,6 @@ fig = px.bar(stage_completion,
              })
 st.plotly_chart(fig, use_container_width=True)
 
-# Add this code right after your existing scorecards section (after the repair needed card)
-
 # --- Daily Completion Scorecard ---
 st.markdown("<br>", unsafe_allow_html=True)  # Add some space
 st.subheader("📅 Daily Production")
@@ -273,8 +271,8 @@ with daily_col2:
 # Optional: Add a daily completion trend chart
 try:
     # Extract dates from Last Updated column
-    df['CompletionDate'] = pd.to_datetime(df['LastUpdated']).dt.date
-    daily_trend = df[df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES, axis=1)]
+    df['CompletionDate'] = pd.to_datetime(df['Last Updated']).dt.date
+    daily_trend = df[df.apply(lambda row: all(row.get(line) == "Completed" for line in PRODUCTION_LINES), axis=1)]
     daily_trend = daily_trend.groupby('CompletionDate').size().reset_index(name='CompletedCount')
     
     fig = px.line(daily_trend, 
